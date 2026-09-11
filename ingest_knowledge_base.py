@@ -1,8 +1,8 @@
 from app import create_app
 from app.models import Product
-from app.rag.ingest import ingest_all
+from app.rag import ingest_all
 from app.rag.knowledge_data import FAQS, POLICIES
-
+ 
 
 def run_ingestion():
     app = create_app()
