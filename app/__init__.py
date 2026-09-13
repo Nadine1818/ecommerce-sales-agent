@@ -34,6 +34,13 @@ def create_app(test_config=None):
         # create the database tables if they don't exist yet
         db.create_all()
 
-    # PLACEHOLDER FOR BLUEPRINT REGISTRATION
+    # Imported here, inside create_app(), for the same reason models are:
+    # app.chat.routes imports compiled_graph (from app.agent), which in
+    # turn eventually needs the Flask app/db to be set up first.
+    from app.chat import chat_bp
+
+    app.register_blueprint(chat_bp, url_prefix="/chat")
+
+    # PLACEHOLDER FOR dashboard BLUEPRINT 
 
     return app
