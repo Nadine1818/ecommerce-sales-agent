@@ -6,7 +6,7 @@ from flask import Flask
 from app.extensions import db
 
 
-def create_app():
+def create_app(test_config=None):
     load_dotenv()
 
     app = Flask(__name__)
@@ -18,6 +18,11 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(basedir, 'data', 'app.db')}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
+
+    # lets tests override config (e.g. an in-memory database) without
+    # touching the real app.db file.
+    if test_config:
+        app.config.update(test_config)
 
     # attach the shared db instance to this specific app instance
     db.init_app(app)

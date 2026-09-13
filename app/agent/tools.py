@@ -55,8 +55,10 @@ def create_order(customer_id: int, items: list[dict]) -> dict:
     for item in items:
         product = db.session.get(Product, item["product_id"])
         if product is None:
+            db.session.rollback()
             return {"error": f"Product {item['product_id']} does not exist."}
         if product.stock_quantity < item["quantity"]:
+            db.session.rollback()
             return {
                 "error": f"Not enough stock for {product.name} "
                 f"(requested {item['quantity']}, have {product.stock_quantity})."

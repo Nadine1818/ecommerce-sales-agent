@@ -1,7 +1,7 @@
 from langchain_core.messages import HumanMessage
 
 from app import create_app
-from app.agent.graph import compiled_graph
+from app.agent import compiled_graph
 from app.models import Order, Product
 
 app = create_app()
