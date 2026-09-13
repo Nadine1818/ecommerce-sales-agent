@@ -12,12 +12,16 @@ from app.rag import retrieve
 def retrieve_product_info(query: str) -> str:
     """Search the product catalog for items matching the customer's question.
     Use this for anything about what products are available, their prices,
-    descriptions, or categories."""
+    descriptions, or categories. Each result includes the product's id —
+    use that exact id when calling create_order."""
     matches = retrieve(query, top_k=3, item_type="product")
     if not matches:
         return "No matching products found."
-    return "\n".join(f"- {m['text']}" for m in matches)
-
+    lines = []
+    for m in matches:
+        product_id = m["metadata"].get("id", "unknown")
+        lines.append(f"- [product_id: {product_id}] {m['text']}")
+    return "\n".join(lines)
 
 @tool
 def retrieve_support_info(query: str) -> str:
@@ -49,7 +53,7 @@ def create_order(customer_id: int, items: list[dict]) -> dict:
     total_price = 0.0
 
     for item in items:
-        product = Product.query.get(item["product_id"])
+        product = db.session.get(Product, item["product_id"])
         if product is None:
             return {"error": f"Product {item['product_id']} does not exist."}
         if product.stock_quantity < item["quantity"]:
