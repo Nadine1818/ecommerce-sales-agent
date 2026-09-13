@@ -1,11 +1,14 @@
 import os
 
+from dotenv import load_dotenv
 from flask import Flask
 
 from app.extensions import db
 
 
 def create_app():
+    load_dotenv()
+
     app = Flask(__name__)
 
     # basedir = the project root (ecommerce-sales-agent/), so the SQLite

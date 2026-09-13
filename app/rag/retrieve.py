@@ -13,7 +13,12 @@ def retrieve(query: str, top_k: int = 3, item_type: str = None) -> list[dict]:
     query_vector = embedding_model.embed_query(query)
 
     # ChromaDB's "where" filter narrows the search to only entries whose metadata matches
-    where_filter = {"type": item_type} if item_type else None
+    if item_type is None:
+        where_filter = None
+    elif isinstance(item_type, list):
+        where_filter = {"type": {"$in": item_type}}
+    else:
+        where_filter = {"type": item_type}
 
     results = collection.query(
         query_embeddings=[query_vector],
