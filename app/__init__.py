@@ -41,8 +41,12 @@ def create_app(test_config=None):
     # turn eventually needs the Flask app/db to be set up first.
     from app.chat import chat_bp
     from app.auth import auth_bp
- 
+    from app.cart import cart_bp
+    from app.orders import orders_bp
+
     app.register_blueprint(chat_bp, url_prefix="/chat")
     app.register_blueprint(auth_bp, url_prefix="/auth")
- 
+    app.register_blueprint(cart_bp, url_prefix="/cart")
+    app.register_blueprint(orders_bp, url_prefix="/orders")
+
     return app

@@ -46,7 +46,28 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    flex-wrap: wrap;
   }
+
+  .nav {
+    display: flex;
+    gap: 4px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .nav a {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .nav a:hover { color: var(--ink); background: var(--accent-soft); }
+  .nav a.active { color: var(--accent-ink); background: var(--accent); }
 
   .brand-mark {
     display: flex;
@@ -246,6 +267,11 @@
           <div class="subtitle">Sales &amp; customer support</div>
         </div>
       </div>
+      <nav class="nav">
+        <a href="{{ url_for('chat.index') }}" class="active">Chat</a>
+        <a href="{{ url_for('cart.index') }}">Cart</a>
+        <a href="{{ url_for('orders.index') }}">Orders</a>
+      </nav>
       <div class="user-info">
         <span class="user-name">
           <span class="avatar">{{ user_name[:1]|upper }}</span>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Orders — Store Assistant</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --panel: #ffffff;
+    --ink: #23221f;
+    --ink-soft: #6b6a63;
+    --ink-faint: #9a988e;
+    --line: #e3e0d6;
+    --accent: #3d5a6c;
+    --accent-dark: #2c4351;
+    --accent-soft: #e8eef1;
+    --accent-ink: #ffffff;
+    --ok-bg: #e6f2ea;
+    --ok-ink: #2f6b45;
+    --warn-bg: #fbf1e0;
+    --warn-ink: #93641a;
+    --shadow: 0 20px 50px -20px rgba(35, 34, 31, 0.20);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 32px 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .brand-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-mark .logo-dot {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(155deg, var(--accent) 0%, var(--accent-dark) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .brand-mark .logo-dot svg { width: 17px; height: 17px; color: #fff; }
+
+  header h1 {
+    font-size: 18.5px;
+    font-weight: 650;
+    margin: 0;
+    letter-spacing: -0.015em;
+  }
+
+  header .subtitle {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 1px;
+  }
+
+  .nav {
+    display: flex;
+    gap: 4px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .nav a {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .nav a:hover { color: var(--ink); background: var(--accent-soft); }
+  .nav a.active { color: var(--accent-ink); background: var(--accent); }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+
+  .user-info .user-name {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .user-info .avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    flex: none;
+  }
+
+  .user-info a { color: var(--accent); text-decoration: none; font-weight: 650; }
+  .user-info a:hover { text-decoration: underline; }
+
+  .order-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .order-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .order-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .order-id { font-size: 14.5px; font-weight: 650; letter-spacing: -0.01em; }
+  .order-date { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  .status {
+    flex: none;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 5px 10px;
+    border-radius: 999px;
+  }
+  .status-confirmed, .status-completed { background: var(--ok-bg); color: var(--ok-ink); }
+  .status-pending, .status-processing { background: var(--warn-bg); color: var(--warn-ink); }
+  .status-cancelled { background: #fbe9e7; color: #8a3a2e; }
+
+  .order-items {
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .order-item-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13.5px;
+  }
+  .order-item-row .name { color: var(--ink); }
+  .order-item-row .qty { color: var(--ink-soft); }
+  .order-item-row .line-total { color: var(--ink-soft); flex: none; }
+
+  .order-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #fdfcfa;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .order-total strong { font-size: 16px; color: var(--ink); letter-spacing: -0.01em; }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+    padding: 64px 32px;
+    color: var(--ink-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+  .empty-state svg { width: 40px; height: 40px; color: var(--ink-faint); }
+  .empty-state p { margin: 0; font-size: 14px; max-width: 300px; line-height: 1.55; }
+  .empty-state a {
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--accent-ink);
+    background: var(--accent);
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 9px;
+    transition: background 0.15s ease;
+  }
+  .empty-state a:hover { background: var(--accent-dark); }
+
+  @media (max-width: 480px) {
+    header h1 { font-size: 16.5px; }
+    .user-info .user-name span:not(.avatar) { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand-mark">
+        <span class="logo-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293A1 1 0 0 0 5.414 17H17M17 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM9 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
+        </span>
+        <div>
+          <h1>Your Orders</h1>
+          <div class="subtitle">Order history &amp; status</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="{{ url_for('chat.index') }}">Chat</a>
+        <a href="{{ url_for('cart.index') }}">Cart</a>
+        <a href="{{ url_for('orders.index') }}" class="active">Orders</a>
+      </nav>
+      <div class="user-info">
+        <span class="user-name">
+          <span class="avatar">{{ user_name[:1]|upper }}</span>
+          <span>{{ user_name }}</span>
+        </span>
+        <a href="{{ url_for('auth.logout') }}">Log out</a>
+      </div>
+    </header>
+
+    {% if orders %}
+      <div class="order-list">
+        {% for order in orders %}
+          <div class="order-card">
+            <div class="order-head">
+              <div>
+                <div class="order-id">Order #{{ order.id }}</div>
+                <div class="order-date">{{ order.created_at.strftime("%b %d, %Y · %I:%M %p") }}</div>
+              </div>
+              <span class="status status-{{ order.status }}">{{ order.status|capitalize }}</span>
+            </div>
+            <div class="order-items">
+              {% for item in order.items %}
+                <div class="order-item-row">
+                  <span class="name">{{ item.product.name if item.product else "Product #" ~ item.product_id }} <span class="qty">× {{ item.quantity }}</span></span>
+                  <span class="line-total">${{ "%.2f"|format(item.price_at_order * item.quantity) }}</span>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="order-total">
+              <span>Total</span>
+              <strong>${{ "%.2f"|format(order.total_price) }}</strong>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>
+        <p>You haven't placed any orders yet. Add items to your cart or ask the assistant to order for you.</p>
+        <a href="{{ url_for('chat.index') }}">Go to chat</a>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>
