@@ -10,13 +10,18 @@
     --panel: #ffffff;
     --ink: #23221f;
     --ink-soft: #6b6a63;
+    --ink-faint: #9a988e;
     --line: #e3e0d6;
     --accent: #3d5a6c;
+    --accent-dark: #2c4351;
+    --accent-soft: #e8eef1;
     --accent-ink: #ffffff;
     --error-bg: #fbe9e7;
     --error-ink: #8a3a2e;
+    --shadow: 0 20px 50px -15px rgba(35, 34, 31, 0.18);
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     margin: 0;
     font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -26,98 +31,297 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 16px;
+    padding: 24px;
   }
-  .card {
+
+  .auth-wrap {
     width: 100%;
-    max-width: 380px;
+    max-width: 880px;
+    min-height: 560px;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
     background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 32px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
   }
-  h1 {
-    font-size: 20px;
-    font-weight: 600;
-    margin: 0 0 24px;
+
+  /* Brand panel */
+  .brand {
+    position: relative;
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 45%),
+      linear-gradient(155deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: var(--accent-ink);
+    padding: 44px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .brand::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 85% 15%, rgba(255,255,255,0.12) 0, rgba(255,255,255,0) 55%),
+      radial-gradient(circle at 15% 90%, rgba(255,255,255,0.08) 0, rgba(255,255,255,0) 50%);
+    pointer-events: none;
+  }
+  .brand-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
     letter-spacing: -0.01em;
+    position: relative;
   }
+  .brand-mark .logo-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,0.28);
+  }
+  .brand-mark svg { width: 16px; height: 16px; }
+
+  .brand-copy {
+    position: relative;
+    margin-top: 10%;
+  }
+  .brand-copy h2 {
+    font-size: 27px;
+    line-height: 1.3;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    margin: 0 0 14px;
+  }
+  .brand-copy p {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.78);
+    margin: 0 0 26px;
+    max-width: 320px;
+  }
+
+  .brand-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    position: relative;
+  }
+  .brand-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    color: rgba(255,255,255,0.9);
+  }
+  .brand-features li svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .brand-footer {
+    position: relative;
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  /* Form panel */
+  .form-panel {
+    padding: 48px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .form-head { margin-bottom: 28px; }
+  .form-head h1 {
+    font-size: 23px;
+    font-weight: 650;
+    margin: 0 0 6px;
+    letter-spacing: -0.015em;
+  }
+  .form-head p {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
   .flash {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     background: var(--error-bg);
     color: var(--error-ink);
     font-size: 13.5px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    margin-bottom: 16px;
+    line-height: 1.4;
+    padding: 11px 13px;
+    border-radius: 10px;
+    margin-bottom: 18px;
   }
+  .flash svg { flex: none; width: 15px; height: 15px; margin-top: 1px; }
+
   label {
     display: block;
-    font-size: 13px;
+    font-size: 12.5px;
+    font-weight: 600;
     color: var(--ink-soft);
-    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 7px;
   }
-  .field { margin-bottom: 16px; }
+  .field { margin-bottom: 17px; }
+  .input-group { position: relative; }
+  .input-group svg {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--ink-faint);
+    pointer-events: none;
+  }
   input[type="text"], input[type="email"], input[type="password"] {
     width: 100%;
     font-family: inherit;
     font-size: 14.5px;
-    padding: 10px 12px;
-    border-radius: 8px;
+    padding: 11px 12px 11px 38px;
+    border-radius: 9px;
     border: 1px solid var(--line);
+    background: #fdfcfa;
+    color: var(--ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   }
-  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input::placeholder { color: var(--ink-faint); }
+  input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background: #fff;
+  }
+
   button {
     width: 100%;
     font-family: inherit;
     font-size: 14.5px;
-    font-weight: 600;
-    padding: 11px;
-    border-radius: 8px;
+    font-weight: 650;
+    padding: 12px;
+    border-radius: 9px;
     border: none;
     background: var(--accent);
     color: var(--accent-ink);
     cursor: pointer;
-    margin-top: 4px;
+    margin-top: 6px;
+    letter-spacing: -0.005em;
+    transition: background 0.15s ease, transform 0.05s ease;
   }
+  button:hover { background: var(--accent-dark); }
+  button:active { transform: translateY(1px); }
+
   .switch {
     text-align: center;
     font-size: 13.5px;
     color: var(--ink-soft);
-    margin-top: 18px;
+    margin-top: 22px;
   }
-  .switch a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .switch a { color: var(--accent); text-decoration: none; font-weight: 650; }
+  .switch a:hover { text-decoration: underline; }
+
+  @media (max-width: 760px) {
+    .auth-wrap { grid-template-columns: 1fr; min-height: 0; }
+    .brand { display: none; }
+    .form-panel { padding: 38px 26px; }
+  }
 </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Create Account</h1>
-
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <div class="flash">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <form method="POST">
-      <div class="field">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" required autocomplete="name">
+  <div class="auth-wrap">
+    <div class="brand">
+      <div class="brand-mark">
+        <span class="logo-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293A1 1 0 0 0 5.414 17H17M17 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM9 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
+        </span>
+        Store Assistant
       </div>
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required autocomplete="email">
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autocomplete="new-password">
-      </div>
-      <button type="submit">Register</button>
-    </form>
 
-    <div class="switch">
-      Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
+      <div class="brand-copy">
+        <h2>Create an account and get started in minutes.</h2>
+        <p>Sign up to chat with the assistant, browse products, and track your orders.</p>
+
+        <ul class="brand-features">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Personalized product recommendations
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Instant answers on pricing &amp; policies
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Place and track orders in chat
+          </li>
+        </ul>
+      </div>
+
+      <div class="brand-footer">&copy; 2026 Store Assistant</div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-head">
+        <h1>Create your account</h1>
+        <p>It only takes a minute to get started.</p>
+      </div>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="flash">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST">
+        <div class="field">
+          <label for="name">Name</label>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" id="name" name="name" placeholder="Jane Doe" required autocomplete="name">
+          </div>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-group">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="new-password">
+          </div>
+        </div>
+        <button type="submit">Register</button>
+      </form>
+
+      <div class="switch">
+        Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
+      </div>
     </div>
   </div>
 </body>
