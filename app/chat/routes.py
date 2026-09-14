@@ -16,7 +16,7 @@ from app.chat import chat_bp
 @chat_bp.route("/")
 @login_required(role="customer")
 def index():
-    return render_template("chat.html", user_name=session["name"])
+    return render_template("chat.html", user_name=session["name"], history=session.get("history", []))
 
 # the route "/send" handles incoming messages from the chat UI, 
 # runs them through the agent graph, and returns the agent's response

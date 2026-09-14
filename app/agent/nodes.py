@@ -126,10 +126,11 @@ def _run_agent_loop(llm, messages: list, tools_list: list, max_iterations: int =
  
 
 def sales_node(state: AgentState) -> dict:
-    """Handles sales conversation. Bound to two tools: retrieve_product_info
-    (product questions) and create_order (the real business action), the
-    LLM decides which, if either, to call based on the conversation."""
-    tools_list = [retrieve_product_info, create_order]
+    """Handles sales conversation. Bound to three tools: retrieve_product_info
+    (product questions), add_to_cart (save an item for later), and
+    create_order (the real business action) — the LLM decides which, if
+    any, to call based on the conversation."""
+    tools_list = [retrieve_product_info, add_to_cart, create_order]
     # bind the tools to the LLM so it can call them by name in its reasoning
     llm = get_llm().bind_tools(tools_list)
 

@@ -283,7 +283,13 @@
 
     <div class="panel">
       <div class="log" id="log">
-        <div class="empty-state" id="empty-state">Ask about products, shipping, returns — or say what you'd like to order.</div>
+        {% if history %}
+          {% for turn in history %}
+            <div class="msg {{ 'human' if turn.role == 'human' else 'ai' }}">{{ turn.content }}</div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state" id="empty-state">Ask about products, shipping, returns — or say what you'd like to order.</div>
+        {% endif %}
       </div>
       <form id="chat-form">
         <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
@@ -296,6 +302,7 @@
     const log = document.getElementById("log");
     const emptyState = document.getElementById("empty-state");
     const form = document.getElementById("chat-form");
+    log.scrollTop = log.scrollHeight;
     const input = document.getElementById("message-input");
     const sendBtn = document.getElementById("send-btn");
 
