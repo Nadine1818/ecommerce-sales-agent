@@ -3,7 +3,7 @@ from sqlalchemy.pool import StaticPool
 
 from app import create_app
 from app.extensions import db
-from app.models import Category, Customer, Product
+from app.models import Category, Product, User
 
 
 @pytest.fixture()
@@ -35,7 +35,7 @@ def sample_data(app_context):
     enough for the create_order tests to exercise both the happy path
     and the stock/existence error paths."""
     category = Category(name="Electronics")
-    customer = Customer(name="Test Customer", email="test@example.com")
+    customer = User(name="Test Customer", email="test@example.com", password_hash="test")
     product = Product(name="Wireless Mouse", price=25.0, stock_quantity=5, category=category)
 
     db.session.add_all([category, customer, product])

@@ -10,13 +10,13 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from app.agent import compiled_graph
 from app.chat import chat_bp
-from app.models import Customer
+from app.models import User
 
 # the route "/" serves the chat UI
 @chat_bp.route("/")
 def index():
     # fetches all customers from the database to populate the customer picker in the UI
-    customers = Customer.query.all()
+    customers = User.query.filter_by(role="customer").all()
     return render_template("chat.html", customers=customers)
 
 # the route "/send" handles incoming messages from the chat UI, 

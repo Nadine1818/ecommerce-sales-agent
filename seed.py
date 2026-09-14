@@ -1,23 +1,23 @@
 from app import create_app
 from app.extensions import db
-from app.models import Category, Product, Customer
+from app.models import Category, Product, User
 
 
 def seed():
     app = create_app()
 
     with app.app_context():
-        # Wipe and reseed so the script is safe to re-run during development
+        # Wipe and reseed so this script is safe to re-run during development
+        # without ending up with duplicate rows every time you test something.
         db.drop_all()
         db.create_all()
 
         electronics = Category(name="Electronics")
         accessories = Category(name="Accessories")
-        # adding to the session but not committing yet in case smth fails halfway through
         db.session.add_all([electronics, accessories])
         db.session.flush()
         # flush() sends these INSERTs to the DB and assigns them real ids,
-        # without fully committing yet since we need electronics.id and
+        # without fully committing yet — we need electronics.id and
         # accessories.id to exist before we can reference them below.
 
         products = [
@@ -26,7 +26,6 @@ def seed():
                 description="Ergonomic wireless mouse with 6-month battery life.",
                 price=19.99,
                 stock_quantity=50,
-                # referencing the Category object directly instead of using an id, SQLAlchemy figures out the foreign key id from the relationship automatically.
                 category=accessories,
             ),
             Product(
@@ -60,16 +59,21 @@ def seed():
         ]
         db.session.add_all(products)
 
-        customers = [
-            Customer(name="Layla Ahmed", email="layla.ahmed@example.com"),
-            Customer(name="Omar Khaled", email="omar.khaled@example.com"),
-        ]
-        db.session.add_all(customers)
+        layla = User(name="Layla Ahmed", email="layla.ahmed@example.com", role="customer")
+        layla.set_password("password123")
 
-        # Commit all the changes to the database
+        omar = User(name="Omar Khaled", email="omar.khaled@example.com", role="customer")
+        omar.set_password("password123")
+
+        admin = User(name="Store Admin", email="admin@store.com", role="admin")
+        admin.set_password("admin123")
+
+        users = [layla, omar, admin]
+        db.session.add_all(users)
+
         db.session.commit()
 
-        print(f"Seeded {len(products)} products, 2 categories, {len(customers)} customers.")
+        print(f"Seeded {len(products)} products, 2 categories, {len(users)} users (2 customers, 1 admin).")
 
 
 if __name__ == "__main__":

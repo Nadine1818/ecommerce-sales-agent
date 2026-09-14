@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models import Customer, Order, OrderItem
+from app.models import Order, OrderItem, User
 
 
 def test_deleting_order_deletes_its_items(sample_data):
@@ -21,7 +21,9 @@ def test_deleting_order_deletes_its_items(sample_data):
 
 
 def test_customer_email_must_be_unique(sample_data):
-    db.session.add(Customer(name="Someone Else", email=sample_data["customer"].email))
+    db.session.add(
+        User(name="Someone Else", email=sample_data["customer"].email, password_hash="test")
+    )
 
     with pytest.raises(IntegrityError):
         db.session.commit()
