@@ -26,7 +26,7 @@ def index():
 @cart_bp.route("/update/<int:item_id>", methods=["POST"])
 @login_required(role="customer")
 def update(item_id):
-    item = CartItem.query.get_or_404(item_id)
+    item = db.get_or_404(CartItem, item_id)
     # a customer should only ever be able to edit their own cart items
     if item.cart.user_id != session["user_id"]:
         abort(404)
@@ -50,7 +50,7 @@ def update(item_id):
 @cart_bp.route("/remove/<int:item_id>", methods=["POST"])
 @login_required(role="customer")
 def remove(item_id):
-    item = CartItem.query.get_or_404(item_id)
+    item = db.get_or_404(CartItem, item_id)
     if item.cart.user_id != session["user_id"]:
         abort(404)
 

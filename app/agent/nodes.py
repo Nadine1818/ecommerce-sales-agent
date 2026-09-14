@@ -126,11 +126,12 @@ def _run_agent_loop(llm, messages: list, tools_list: list, max_iterations: int =
  
 
 def sales_node(state: AgentState) -> dict:
-    """Handles sales conversation. Bound to three tools: retrieve_product_info
-    (product questions), add_to_cart (save an item for later), and
-    create_order (the real business action) — the LLM decides which, if
-    any, to call based on the conversation."""
-    tools_list = [retrieve_product_info, add_to_cart, create_order]
+    """Handles sales conversation. Bound to four tools: retrieve_product_info
+    (product questions, includes live stock), check_product_availability
+    (re-checking a known product_id without a fresh search), add_to_cart
+    (save an item for later), and create_order (the real business action)
+    — the LLM decides which, if any, to call based on the conversation."""
+    tools_list = [retrieve_product_info, check_product_availability, add_to_cart, create_order]
     # bind the tools to the LLM so it can call them by name in its reasoning
     llm = get_llm().bind_tools(tools_list)
 
@@ -146,6 +147,10 @@ def sales_node(state: AgentState) -> dict:
         "up a cart without buying immediately. "
         "Only call create_order after the customer has clearly confirmed "
         "they want to buy specific items right now. "
+        "This store does not collect shipping address or payment method — "
+        "there is nowhere to store them — so never ask for them or claim "
+        "you need them; confirming which products and quantities is enough "
+        "to place the order. "
         "Only state product facts that are explicitly present in what "
         "retrieve_product_info or check_product_availability returns — do "
         "not invent features, stock guarantees, or details that aren't in it. "

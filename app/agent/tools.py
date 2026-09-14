@@ -47,6 +47,7 @@ def retrieve_support_info(query: str) -> str:
 
 # used when the customer asks about a product's stock or availability,
 # but looks it up by id in case the customer already knows the product id from a previous retrieve_product_info result.
+@tool
 def check_product_availability(product_id: int) -> dict:
     """Re-check current stock for a product you already know the id of
     from earlier in this conversation, without doing a fresh product
