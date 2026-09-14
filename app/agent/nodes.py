@@ -6,7 +6,13 @@ from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_groq import ChatGroq
 
 from app.agent.state import AgentState
-from app.agent.tools import create_order, retrieve_product_info, retrieve_support_info
+from app.agent.tools import (
+    add_to_cart,
+    check_product_availability,
+    create_order,
+    retrieve_product_info,
+    retrieve_support_info,
+)
 
 _llm = None
 
@@ -80,6 +86,44 @@ def _execute_tool_calls(ai_message, tools_list):
 
     return tool_messages, retrieved_context, tool_result
 
+# before: each node called LLM exactly twice , not more
+# now: each node can call LLM as many times as it needs to, until it either stops requesting tools or hits a safety cap of max_iterations.
+# in case it needs more than one tool call
+def _run_agent_loop(llm, messages: list, tools_list: list, max_iterations: int = 4) -> dict:
+    """Repeatedly calls the LLM and executes whatever tools it requests,
+    feeding results back in, until it responds without requesting another
+    tool call, or until max_iterations is hit as a safety cap against a
+    runaway loop. This replaces a fixed "call once, maybe run tools once,
+    call once more" shape, which can't handle a question that genuinely
+    needs two sequential tool calls, e.g. retrieve_product_info to find
+    a product's id, then check_product_availability using that id, which
+    can't both be known before the first tool's result comes back."""
+    new_messages = []
+    retrieved_context = None
+    tool_result = None
+ 
+    for _ in range(max_iterations):
+        ai_message = llm.invoke(messages + new_messages)
+        new_messages.append(ai_message)
+ 
+        if not ai_message.tool_calls:
+            break
+ 
+        tool_messages, this_context, this_result = _execute_tool_calls(ai_message, tools_list)
+        new_messages.extend(tool_messages)
+        if this_context is not None:
+            retrieved_context = this_context
+        if this_result is not None:
+            tool_result = this_result
+ 
+    update = {"messages": new_messages}
+    if retrieved_context is not None:
+        update["retrieved_context"] = retrieved_context
+    if tool_result is not None:
+        update["tool_result"] = tool_result
+    return update
+ 
+ 
 
 def sales_node(state: AgentState) -> dict:
     """Handles sales conversation. Bound to two tools: retrieve_product_info
@@ -92,33 +136,25 @@ def sales_node(state: AgentState) -> dict:
     system_prompt = (
         "You are a sales assistant for an e-commerce store. Help the "
         "customer find products and answer questions about price and "
-        "availability using retrieve_product_info. Only call create_order "
-        "after the customer has clearly confirmed what they want to buy. "
-        f"When calling create_order, always use customer_id={state['customer_id']}."
+        "availability using retrieve_product_info. "
+        "retrieve_product_info includes current stock for every result, "
+        "so use that number directly when the customer asks about "
+        "availability or quantity — no separate check needed for a "
+        "product you just looked up. "
+        "Use add_to_cart when the customer wants to save an item or build "
+        "up a cart without buying immediately. "
+        "Only call create_order after the customer has clearly confirmed "
+        "they want to buy specific items right now. "
+        "Only state product facts that are explicitly present in what "
+        "retrieve_product_info or check_product_availability returns — do "
+        "not invent features, stock guarantees, or details that aren't in it. "
+        f"When calling add_to_cart or create_order, always use "
+        f"customer_id={state['customer_id']}."
     )
 
     # Sends system message and conversation history to the LLM
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
-    ai_message = llm.invoke(messages)
-
-    if not ai_message.tool_calls:
-        # tool_calls is empty if the LLM didn't decide to call any tools, in which case we just return its message as-is
-        return {"messages": [ai_message]}
-
-    tool_messages, retrieved_context, tool_result = _execute_tool_calls(ai_message, tools_list)
-
-    # Ask the LLM again, now with the tool's real result included, so it
-    # can turn raw data (retrieved text, or an order confirmation dict)
-    # into an actual conversational reply.
-    follow_up = messages + [ai_message] + tool_messages
-    final_message = llm.invoke(follow_up)
-
-    update = {"messages": [ai_message] + tool_messages + [final_message]}
-    if retrieved_context is not None:
-        update["retrieved_context"] = retrieved_context
-    if tool_result is not None:
-        update["tool_result"] = tool_result
-    return update
+    return _run_agent_loop(llm, messages, tools_list)
 
 
 def customer_service_node(state: AgentState) -> dict:
@@ -129,24 +165,15 @@ def customer_service_node(state: AgentState) -> dict:
     system_prompt = (
         "You are a customer service assistant for an e-commerce store. "
         "Answer questions about shipping, returns, and policies using "
-        "retrieve_support_info to find accurate information before answering."
+        "retrieve_support_info to find accurate information before answering. "
+        "Only state facts that are explicitly present in what retrieve_support_info "
+        "returns — do not invent procedures, contact instructions, or details "
+        "that aren't in it. If the retrieved information doesn't fully answer "
+        "the question, say so honestly rather than filling the gap yourself."
     )
 
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
-    ai_message = llm.invoke(messages)
-
-    if not ai_message.tool_calls:
-        return {"messages": [ai_message]}
-
-    tool_messages, retrieved_context, _ = _execute_tool_calls(ai_message, tools_list)
-
-    follow_up = messages + [ai_message] + tool_messages
-    final_message = llm.invoke(follow_up)
-
-    update = {"messages": [ai_message] + tool_messages + [final_message]}
-    if retrieved_context is not None:
-        update["retrieved_context"] = retrieved_context
-    return update
+    return _run_agent_loop(llm, messages, tools_list)
 
 
 def format_response(state: AgentState) -> dict:
