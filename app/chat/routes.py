@@ -7,38 +7,33 @@ don't need to persist across requests."""
 # request gives access to the incoming http request
 from flask import jsonify, render_template, request, session
 from langchain_core.messages import AIMessage, HumanMessage
-
+ 
 from app.agent import compiled_graph
+from app.auth.decorators import login_required
 from app.chat import chat_bp
-from app.models import User
 
 # the route "/" serves the chat UI
 @chat_bp.route("/")
+@login_required(role="customer")
 def index():
-    # fetches all customers from the database to populate the customer picker in the UI
-    customers = User.query.filter_by(role="customer").all()
-    return render_template("chat.html", customers=customers)
+    return render_template("chat.html", user_name=session["name"])
 
 # the route "/send" handles incoming messages from the chat UI, 
 # runs them through the agent graph, and returns the agent's response
 @chat_bp.route("/send", methods=["POST"])
+@login_required(role="customer")
 def send():
     data = request.get_json()
-    customer_id = data.get("customer_id")
     message = (data.get("message") or "").strip()
 
-    if not customer_id or not message:
-        # 400 bad request if either customer_id or message is missing
-        return jsonify({"error": "customer_id and message are required"}), 400
 
-    customer_id = int(customer_id)
+    if not message:
+        return jsonify({"error": "message is required"}), 400
+ 
+    # customer_id comes from the logged-in session
+    customer_id = session["user_id"]
 
-    # Switching to a different customer (or starting fresh) resets the
-    # stored conversation history, as a conversation only makes sense in the context of
-    # one customer at a time.
-    if session.get("customer_id") != customer_id:
-        session["customer_id"] = customer_id
-        session["history"] = []
+    history = session.get("history", [])
 
     # gets the conversation history from the session, or an empty list if none exists
     history = session.get("history", [])

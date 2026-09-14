@@ -5,6 +5,8 @@ from flask import Flask
 
 from app.extensions import db
 
+_project_root = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+load_dotenv(os.path.join(_project_root, ".env"))
 
 def create_app(test_config=None):
     load_dotenv()
@@ -38,9 +40,9 @@ def create_app(test_config=None):
     # app.chat.routes imports compiled_graph (from app.agent), which in
     # turn eventually needs the Flask app/db to be set up first.
     from app.chat import chat_bp
-
+    from app.auth import auth_bp
+ 
     app.register_blueprint(chat_bp, url_prefix="/chat")
-
-    # PLACEHOLDER FOR dashboard BLUEPRINT 
-
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+ 
     return app

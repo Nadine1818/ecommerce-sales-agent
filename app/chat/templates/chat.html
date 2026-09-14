@@ -61,6 +61,20 @@
     color: var(--ink);
   }
 
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  .user-info a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
   .panel {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -157,11 +171,10 @@
   <div class="app">
     <header>
       <h1>Store Assistant</h1>
-      <select id="customer-picker">
-        {% for customer in customers %}
-        <option value="{{ customer.id }}">{{ customer.name }}</option>
-        {% endfor %}
-      </select>
+      <div class="user-info">
+        <span>{{ user_name }}</span>
+        <a href="{{ url_for('auth.logout') }}">Log out</a>
+      </div>
     </header>
 
     <div class="panel">
@@ -181,7 +194,6 @@
     const form = document.getElementById("chat-form");
     const input = document.getElementById("message-input");
     const sendBtn = document.getElementById("send-btn");
-    const picker = document.getElementById("customer-picker");
 
     function addMessage(role, text) {
       if (emptyState) emptyState.remove();
@@ -193,12 +205,9 @@
       return bubble;
     }
 
-    // Starting a new conversation whenever the customer picker changes —
-    // matches the server's own reset-on-customer-change logic in routes.py.
-    picker.addEventListener("change", () => {
-      log.innerHTML = "";
-      addMessage("ai", "Switched customer. Starting a new conversation.");
-    });
+    // Conversation stays scoped to whoever is logged in — no picker to
+    // switch between anymore; a different customer means logging out
+    // and logging back in as them.
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -215,10 +224,7 @@
         const response = await fetch("/chat/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customer_id: picker.value,
-            message: message,
-          }),
+          body: JSON.stringify({ message: message }),
         });
         const data = await response.json();
 
