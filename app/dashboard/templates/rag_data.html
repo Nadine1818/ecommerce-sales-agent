@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}RAG Data{% endblock %}
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+  <h1 style="margin:0;">RAG Knowledge Base</h1>
+  <a href="{{ url_for('dashboard.rag_add') }}" class="btn btn-accent">+ Add Entry</a>
+</div>
+
+<h2 style="font-size:15px; margin: 24px 0 10px;">FAQs</h2>
+{% if faqs %}
+<table>
+  <thead><tr><th>Question</th><th>Answer</th><th></th></tr></thead>
+  <tbody>
+    {% for faq in faqs %}
+    <tr>
+      <td>{{ faq.metadata.question }}</td>
+      <td>{{ faq.metadata.answer }}</td>
+      <td class="actions">
+        <a href="{{ url_for('dashboard.rag_edit', item_id=faq.id) }}" class="btn">Edit</a>
+        <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=faq.id) }}" onsubmit="return confirm('Delete this FAQ?');" style="display:inline;">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No FAQs yet.</div>
+{% endif %}
+
+<h2 style="font-size:15px; margin: 24px 0 10px;">Policies</h2>
+{% if policies %}
+<table>
+  <thead><tr><th>Title</th><th>Content</th><th></th></tr></thead>
+  <tbody>
+    {% for policy in policies %}
+    <tr>
+      <td>{{ policy.metadata.title }}</td>
+      <td>{{ policy.metadata.content }}</td>
+      <td class="actions">
+        <a href="{{ url_for('dashboard.rag_edit', item_id=policy.id) }}" class="btn">Edit</a>
+        <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=policy.id) }}" onsubmit="return confirm('Delete this policy?');" style="display:inline;">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No policies yet.</div>
+{% endif %}
+{% endblock %}

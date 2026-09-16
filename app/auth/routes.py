@@ -59,9 +59,8 @@ def login():
         session["name"] = user.name
 
         if user.role == "admin":
-            # PLACEHOLDER for future admin dashboard
-            return redirect(url_for("chat.index"))
-
+            return redirect(url_for("dashboard.index"))
+ 
         return redirect(url_for("chat.index"))
 
     return render_template("login.html")

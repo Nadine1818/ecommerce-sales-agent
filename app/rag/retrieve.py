@@ -4,7 +4,7 @@ from app.rag.store import get_collection, get_embedding_model
 
 
 def retrieve(query: str, top_k: int = 3, item_type: str = None) -> list[dict]:
-    # returns top_k most relevant chunks, filtered by item_type if provided (product, FAQ, policy), for a given query string
+    # returns top_k most relevant chunks, filtered by item_type if provided (product, FAQ, policy) or multiple types at once or none, for a given query string
 
     collection = get_collection()
 
@@ -35,3 +35,17 @@ def retrieve(query: str, top_k: int = 3, item_type: str = None) -> list[dict]:
         matches.append({"text": text, "metadata": metadata, "distance": distance})
 
     return matches
+
+# shows all items in the knowledge base, optionally filtered by type. 
+# Used by the dashboard to show all existing entries, not just those relevant to a search query.
+# no similarity search is done here, just a straight retrieval of all items of the given type(s) from the database.
+def get_all_items(item_type: str = None) -> list[dict]:
+    collection = get_collection()
+    where_filter = {"type": item_type} if item_type else None
+ 
+    results = collection.get(where=where_filter)
+ 
+    items = []
+    for item_id, text, metadata in zip(results["ids"], results["documents"], results["metadatas"]):
+        items.append({"id": item_id, "text": text, "metadata": metadata})
+    return items

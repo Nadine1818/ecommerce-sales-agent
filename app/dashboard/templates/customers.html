@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+{% block content %}
+<h1>Customers</h1>
+
+{% if customers %}
+<table>
+  <thead>
+    <tr><th>ID</th><th>Name</th><th>Email</th><th>Orders</th></tr>
+  </thead>
+  <tbody>
+    {% for customer in customers %}
+    <tr>
+      <td>{{ customer.id }}</td>
+      <td>{{ customer.name }}</td>
+      <td>{{ customer.email }}</td>
+      <td>{{ customer.orders|length }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No customers yet.</div>
+{% endif %}
+{% endblock %}

@@ -43,10 +43,12 @@ def create_app(test_config=None):
     from app.auth import auth_bp
     from app.cart import cart_bp
     from app.orders import orders_bp
-
+    from app.dashboard import dashboard_bp
+ 
     app.register_blueprint(chat_bp, url_prefix="/chat")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(cart_bp, url_prefix="/cart")
     app.register_blueprint(orders_bp, url_prefix="/orders")
-
+    app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
+    
     return app

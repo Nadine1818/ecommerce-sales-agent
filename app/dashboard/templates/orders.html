@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+<h1>Orders</h1>
+
+{% if orders %}
+<table>
+  <thead>
+    <tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th></tr>
+  </thead>
+  <tbody>
+    {% for order in orders %}
+    <tr>
+      <td>#{{ order.id }}</td>
+      <td>{{ order.customer.name if order.customer else "Unknown" }}</td>
+      <td>
+        {% for item in order.items %}
+          {{ item.quantity }}x {{ item.product.name if item.product else "(deleted product)" }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      </td>
+      <td>${{ "%.2f"|format(order.total_price) }}</td>
+      <td><span class="badge">{{ order.status }}</span></td>
+      <td>{{ order.created_at.strftime("%b %d, %Y %H:%M") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No orders yet.</div>
+{% endif %}
+{% endblock %}

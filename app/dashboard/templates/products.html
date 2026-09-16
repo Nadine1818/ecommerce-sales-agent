@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<h1>Products</h1>
+
+{% if products %}
+<table>
+  <thead>
+    <tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th></tr>
+  </thead>
+  <tbody>
+    {% for product in products %}
+    <tr>
+      <td>{{ product.id }}</td>
+      <td>{{ product.name }}</td>
+      <td>{{ product.category.name }}</td>
+      <td>${{ "%.2f"|format(product.price) }}</td>
+      <td>
+        {{ product.stock_quantity }}
+        {% if product.stock_quantity == 0 %}<span class="badge">out of stock</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No products yet.</div>
+{% endif %}
+{% endblock %}
