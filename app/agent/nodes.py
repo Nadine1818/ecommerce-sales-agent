@@ -171,6 +171,12 @@ def sales_node(state: AgentState) -> dict:
         "Only state product facts that are explicitly present in what "
         "retrieve_product_info or check_product_availability returns — do "
         "not invent features, stock guarantees, or details that aren't in it. "
+        "This includes descriptors like \"wireless\" — a search might return "
+        "a product that isn't actually a strong match; if a product's "
+        "description doesn't support a label the customer asked about, "
+        "either leave that product out of your answer or mention it without "
+        "claiming it has that property, rather than inventing a justification "
+        "for why it fits. "
         f"When calling add_to_cart or create_order, always use "
         f"customer_id={state['customer_id']}. "
         + _SHARED_BEHAVIOR_RULES
