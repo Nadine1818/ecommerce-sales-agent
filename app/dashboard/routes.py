@@ -27,7 +27,7 @@ def products():
 @login_required(role="admin")
 def orders():
     all_orders = Order.query.order_by(Order.created_at.desc()).all()
-    return render_template("orders.html", user_name=session["name"], orders=all_orders)
+    return render_template("admin_orders.html", user_name=session["name"], orders=all_orders)
 
 # role specified to avoid adding the admin to the customer list
 @dashboard_bp.route("/customers")
