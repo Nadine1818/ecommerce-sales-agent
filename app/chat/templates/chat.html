@@ -194,6 +194,23 @@
     opacity: 0.55;
   }
 
+  .msg p {
+    margin: 0 0 8px;
+  }
+  .msg p:last-child {
+    margin-bottom: 0;
+  }
+  .msg ul {
+    margin: 0 0 8px;
+    padding-left: 20px;
+  }
+  .msg ul:last-child {
+    margin-bottom: 0;
+  }
+  .msg li {
+    margin-bottom: 2px;
+  }
+
   .empty-state {
     margin: auto;
     color: var(--ink-soft);
@@ -306,11 +323,53 @@
     const input = document.getElementById("message-input");
     const sendBtn = document.getElementById("send-btn");
 
+    function escapeHtml(text) {
+      // Route the text through a plain-text assignment first, then read
+      // back the escaped HTML — this is what actually prevents any
+      // literal <script> or similar in the text from being interpreted
+      // as real HTML once we switch to innerHTML below.
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderMarkdown(text) {
+      // Deliberately minimal — just enough to make the LLM's actual
+      // output style (bold, short bullet lists) look right, not a full
+      // markdown parser. Escaping happens BEFORE any tag gets added, so
+      // this can never be tricked into injecting real HTML.
+      const escaped = escapeHtml(text);
+      const withBold = escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+      const lines = withBold.split("\n");
+      let html = "";
+      let inList = false;
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("- ")) {
+          if (!inList) { html += "<ul>"; inList = true; }
+          html += `<li>${trimmed.slice(2)}</li>`;
+        } else {
+          if (inList) { html += "</ul>"; inList = false; }
+          if (trimmed === "") continue;
+          html += `<p>${trimmed}</p>`;
+        }
+      }
+      if (inList) html += "</ul>";
+      return html;
+    }
+
     function addMessage(role, text) {
       if (emptyState) emptyState.remove();
       const bubble = document.createElement("div");
       bubble.className = "msg " + role;
-      bubble.textContent = text;
+      // Human messages are just plain typed text — no need to render
+      // markdown for something the customer typed themselves.
+      if (role === "ai") {
+        bubble.innerHTML = renderMarkdown(text);
+      } else {
+        bubble.textContent = text;
+      }
       log.appendChild(bubble);
       log.scrollTop = log.scrollHeight;
       return bubble;
@@ -341,13 +400,13 @@
 
         pending.classList.remove("pending");
         if (data.error) {
-          pending.textContent = "Error: " + data.error;
+          pending.innerHTML = renderMarkdown("Error: " + data.error);
         } else {
-          pending.textContent = data.response;
+          pending.innerHTML = renderMarkdown(data.response);
         }
       } catch (err) {
         pending.classList.remove("pending");
-        pending.textContent = "Something went wrong reaching the server.";
+        pending.innerHTML = renderMarkdown("Something went wrong reaching the server.");
       } finally {
         sendBtn.disabled = false;
         input.focus();
