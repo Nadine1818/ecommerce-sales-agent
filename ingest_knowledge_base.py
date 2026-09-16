@@ -1,6 +1,6 @@
 from app import create_app
 from app.models import Product
-from app.rag import ingest_all
+from app.rag import delete_item, get_all_items, ingest_all
 from app.rag.knowledge_data import FAQS, POLICIES
  
 
@@ -19,9 +19,24 @@ def run_ingestion():
         ingest_all(FAQS, "faq")
         ingest_all(POLICIES, "policy")
 
+        # Reconciliation: ingest_all only pushes forward what currently
+        # exists, it never removes anything. If a product was deleted
+        # from the database since the last ingestion, its embedding would
+        # otherwise sit in ChromaDB forever with no product behind it.
+        current_product_ids = {str(p["id"]) for p in products}
+        # gets chromaDB entries for all products, then deletes any that are no longer in the database
+        existing_product_entries = get_all_items(item_type="product")
+        stale_count = 0
+        for entry in existing_product_entries:
+            entry_product_id = entry["metadata"].get("id")
+            if entry_product_id not in current_product_ids:
+                delete_item(entry["id"])
+                stale_count += 1
+ 
         print(
             f"Ingested {len(products)} products, {len(FAQS)} FAQs, "
             f"{len(POLICIES)} policies into ChromaDB."
+            + (f" Removed {stale_count} stale product entries." if stale_count else "")
         )
 
 
