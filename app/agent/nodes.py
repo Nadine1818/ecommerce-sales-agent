@@ -23,7 +23,9 @@ def get_llm():
     # of recreating it on every single message.
     global _llm
     if _llm is None:
-        _llm = ChatGroq(model="openai/gpt-oss-120b", api_key=os.environ.get("GROQ_API_KEY"))
+        _llm = ChatGroq(model="openai/gpt-oss-120b", 
+                        api_key=os.environ.get("GROQ_API_KEY"),
+                        temperature=0.1,)
     return _llm
 
 
