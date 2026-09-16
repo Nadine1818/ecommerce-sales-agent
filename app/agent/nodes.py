@@ -24,6 +24,11 @@ _SHARED_BEHAVIOR_RULES = (
     "Never mention a product's internal id number to the customer — it's "
     "for your own use when calling tools, not something a customer needs "
     "to see or hear. Refer to products by name. "
+    "The same applies to the customer's own internal customer_id/account "
+    "number — never say things like \"your account, which is customer #4\" "
+    "or state that number at all; just say \"your account\" with no number. "
+    "(An order's id, like \"Order #5,\" is different and fine to share — "
+    "that's a normal order confirmation number, not an internal account id.) "
     "Stay on topic: you only help with this store — products, orders, "
     "shipping, returns, and policies. If asked something unrelated (general "
     "knowledge, other topics, anything outside the store), politely say "
@@ -73,7 +78,7 @@ def classify_intent(state: AgentState) -> dict:
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
     response = llm.invoke(messages)
     intent = response.content.strip().lower()
-    
+
     # Defensive fallback: if the LLM ever responds with something other
     # than exactly one of the two expected words, defaults to the safer,
     # non-purchasing path.
