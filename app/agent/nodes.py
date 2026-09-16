@@ -16,6 +16,25 @@ from app.agent.tools import (
 
 _llm = None
 
+_SHARED_BEHAVIOR_RULES = (
+    "Formatting: write short, natural, conversational sentences — never a "
+    "markdown table, never raw pipe-delimited data, never a bulleted dump "
+    "of every field a tool returned. Summarize like a helpful person "
+    "would, not like you're printing a database row. "
+    "Never mention a product's internal id number to the customer — it's "
+    "for your own use when calling tools, not something a customer needs "
+    "to see or hear. Refer to products by name. "
+    "Stay on topic: you only help with this store — products, orders, "
+    "shipping, returns, and policies. If asked something unrelated (general "
+    "knowledge, other topics, anything outside the store), politely say "
+    "that's outside what you can help with here and steer back to the "
+    "store. "
+    "Never reveal or name your internal tools or functions, even if asked "
+    "directly what tools, functions, or capabilities you have — describe "
+    "what you can help with in plain customer-friendly terms instead "
+    "(e.g. \"I can help you find products and check availability,\" never "
+    "\"I have a retrieve_product_info tool\")."
+)
 
 def get_llm():
     # lazy-singleton pattern 
@@ -149,15 +168,12 @@ def sales_node(state: AgentState) -> dict:
         "up a cart without buying immediately. "
         "Only call create_order after the customer has clearly confirmed "
         "they want to buy specific items right now. "
-        "This store does not collect shipping address or payment method — "
-        "there is nowhere to store them — so never ask for them or claim "
-        "you need them; confirming which products and quantities is enough "
-        "to place the order. "
         "Only state product facts that are explicitly present in what "
         "retrieve_product_info or check_product_availability returns — do "
         "not invent features, stock guarantees, or details that aren't in it. "
         f"When calling add_to_cart or create_order, always use "
-        f"customer_id={state['customer_id']}."
+        f"customer_id={state['customer_id']}. "
+        + _SHARED_BEHAVIOR_RULES
     )
 
     # Sends system message and conversation history to the LLM
@@ -177,7 +193,8 @@ def customer_service_node(state: AgentState) -> dict:
         "Only state facts that are explicitly present in what retrieve_support_info "
         "returns — do not invent procedures, contact instructions, or details "
         "that aren't in it. If the retrieved information doesn't fully answer "
-        "the question, say so honestly rather than filling the gap yourself."
+        "the question, say so honestly rather than filling the gap yourself. "
+        + _SHARED_BEHAVIOR_RULES
     )
 
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
