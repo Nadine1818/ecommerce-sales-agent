@@ -56,16 +56,24 @@ def classify_intent(state: AgentState) -> dict:
     last_message = state["messages"][-1].content
 
     system_prompt = (
-        "Classify the customer's message as exactly one word: "
+        "Classify the customer's LATEST message as exactly one word: "
         "'sales' if they're asking about products, prices, recommendations, "
         "or want to buy something; 'customer_service' if they're asking "
         "about shipping, returns, policies, or general support. "
-        "Respond with only one of these two words, nothing else."
+        "The latest message might be short and depend on earlier context "
+        "in the conversation (e.g. a bare number answering a previous "
+        "question about quantity) — use the full conversation to "
+        "understand what it actually refers to, not just its own words. "
+        "Respond with only one of the two words, nothing else."
     )
 
-    response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=last_message)])
+    # Full conversation history, not just the isolated last message — a
+    # short reply like "1" is meaningless classified on its own; it only
+    # makes sense in light of what was being discussed before it.
+    messages = [SystemMessage(content=system_prompt)] + state["messages"]
+    response = llm.invoke(messages)
     intent = response.content.strip().lower()
-
+    
     # Defensive fallback: if the LLM ever responds with something other
     # than exactly one of the two expected words, defaults to the safer,
     # non-purchasing path.
