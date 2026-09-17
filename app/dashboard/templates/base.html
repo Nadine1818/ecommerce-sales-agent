@@ -265,7 +265,7 @@
       <a href="{{ url_for('dashboard.products') }}" class="{{ 'active' if request.endpoint == 'dashboard.products' }}">Products</a>
       <a href="{{ url_for('dashboard.orders') }}" class="{{ 'active' if request.endpoint == 'dashboard.orders' }}">Orders</a>
       <a href="{{ url_for('dashboard.customers') }}" class="{{ 'active' if request.endpoint == 'dashboard.customers' }}">Customers</a>
-      <a href="{{ url_for('dashboard.rag_data') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('dashboard.rag') }}">RAG Data</a>
+      <a href="{{ url_for('dashboard.rag_data') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('dashboard.rag') }}">Knowledge Base</a>
     </nav>
     <div class="right">
       <span>{{ user_name }}</span>
