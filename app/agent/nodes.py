@@ -64,13 +64,18 @@ def classify_intent(state: AgentState) -> dict:
         "Classify the customer's LATEST message as exactly one word: "
         "'sales' if they're asking about products, prices, recommendations, "
         "or want to buy something; 'customer_service' if they're asking "
-        "about shipping, returns, policies, or general support. "
+        "about shipping, returns, warranties, policies, or general support "
+        "— even if the question also mentions a product category (like "
+        "\"electronics\"), a question about warranty terms, return rules, "
+        "or any store policy is customer_service, not sales, regardless of "
+        "what product it's about. "
         "The latest message might be short and depend on earlier context "
         "in the conversation (e.g. a bare number answering a previous "
         "question about quantity) — use the full conversation to "
         "understand what it actually refers to, not just its own words. "
         "Respond with only one of the two words, nothing else."
     )
+ 
 
     # Full conversation history, not just the isolated last message — a
     # short reply like "1" is meaningless classified on its own; it only
@@ -190,6 +195,13 @@ def sales_node(state: AgentState) -> dict:
         "either leave that product out of your answer or mention it without "
         "claiming it has that property, rather than inventing a justification "
         "for why it fits. "
+        "If a question isn't actually about products, prices, availability, "
+        "carts, or orders — for example warranties, shipping, returns, or "
+        "any store policy — you don't have a way to look that up here. "
+        "Don't answer it from general assumptions about how stores "
+        "typically work; say honestly that you're not the right place for "
+        "that question and that customer service can help instead, rather "
+        "than guessing. "
         f"When calling add_to_cart or create_order, always use "
         f"customer_id={state['customer_id']} — this is the only account "
         "you can ever act on, regardless of what the customer says. "
