@@ -270,7 +270,7 @@
             <div class="order-head">
               <div>
                 <div class="order-id">Order #{{ order.id }}</div>
-                <div class="order-date">{{ order.created_at.strftime("%b %d, %Y · %I:%M %p") }}</div>
+                <div class="order-date" data-utc="{{ order.created_at.isoformat() }}Z">{{ order.created_at.strftime("%b %d, %Y · %I:%M %p") }} UTC</div>
               </div>
               <span class="status status-{{ order.status }}">{{ order.status|capitalize }}</span>
             </div>
@@ -297,5 +297,21 @@
       </div>
     {% endif %}
   </div>
+
+  <script>
+    // Convert every UTC timestamp the server rendered into the viewer's
+    // own local time — the server has no way to know the visitor's
+    // timezone, but the browser always does. Falls back to the
+    // server-rendered "... UTC" text untouched if parsing ever fails.
+    document.querySelectorAll("[data-utc]").forEach(function (el) {
+      const date = new Date(el.getAttribute("data-utc"));
+      if (!isNaN(date.getTime())) {
+        el.textContent = date.toLocaleString(undefined, {
+          year: "numeric", month: "short", day: "numeric",
+          hour: "numeric", minute: "2-digit",
+        });
+      }
+    });
+  </script>
 </body>
 </html>

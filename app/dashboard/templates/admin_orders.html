@@ -20,7 +20,7 @@
       </td>
       <td>${{ "%.2f"|format(order.total_price) }}</td>
       <td><span class="badge">{{ order.status }}</span></td>
-      <td>{{ order.created_at.strftime("%b %d, %Y %H:%M") }}</td>
+      <td data-utc="{{ order.created_at.isoformat() }}Z">{{ order.created_at.strftime("%b %d, %Y %H:%M") }} UTC</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -28,4 +28,18 @@
 {% else %}
 <div class="empty">No orders yet.</div>
 {% endif %}
+
+<script>
+  // Same conversion as the customer orders page — browser-local time,
+  // server has no way to know the viewer's timezone on its own.
+  document.querySelectorAll("[data-utc]").forEach(function (el) {
+    const date = new Date(el.getAttribute("data-utc"));
+    if (!isNaN(date.getTime())) {
+      el.textContent = date.toLocaleString(undefined, {
+        year: "numeric", month: "short", day: "numeric",
+        hour: "numeric", minute: "2-digit",
+      });
+    }
+  });
+</script>
 {% endblock %}
