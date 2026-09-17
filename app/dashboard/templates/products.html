@@ -4,18 +4,19 @@
 <h1>Products</h1>
 
 {% if products %}
-<table>
+<div class="table-wrap">
+<table class="stack">
   <thead>
-    <tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th></tr>
+    <tr><th style="width:64px;">ID</th><th>Name</th><th style="width:160px;">Category</th><th style="width:100px;">Price</th><th style="width:160px;">Stock</th></tr>
   </thead>
   <tbody>
     {% for product in products %}
     <tr>
-      <td>{{ product.id }}</td>
-      <td>{{ product.name }}</td>
-      <td>{{ product.category.name }}</td>
-      <td>${{ "%.2f"|format(product.price) }}</td>
-      <td>
+      <td data-label="ID">{{ product.id }}</td>
+      <td class="truncate" data-label="Name" title="{{ product.name }}">{{ product.name }}</td>
+      <td class="truncate" data-label="Category" title="{{ product.category.name }}">{{ product.category.name }}</td>
+      <td data-label="Price">${{ "%.2f"|format(product.price) }}</td>
+      <td data-label="Stock">
         {{ product.stock_quantity }}
         {% if product.stock_quantity == 0 %}<span class="badge">out of stock</span>{% endif %}
       </td>
@@ -23,6 +24,7 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="empty">No products yet.</div>
 {% endif %}

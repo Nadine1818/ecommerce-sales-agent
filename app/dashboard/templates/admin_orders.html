@@ -4,27 +4,29 @@
 <h1>Orders</h1>
 
 {% if orders %}
-<table>
+<div class="table-wrap">
+<table class="stack">
   <thead>
-    <tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th></tr>
+    <tr><th style="width:84px;">Order ID</th><th style="width:140px;">Customer</th><th>Items</th><th style="width:90px;">Total</th><th style="width:100px;">Status</th><th style="width:180px;">Placed</th></tr>
   </thead>
   <tbody>
     {% for order in orders %}
     <tr>
-      <td>#{{ order.id }}</td>
-      <td>{{ order.customer.name if order.customer else "Unknown" }}</td>
-      <td>
+      <td data-label="Order ID">#{{ order.id }}</td>
+      <td class="truncate" data-label="Customer" title="{{ order.customer.name if order.customer else 'Unknown' }}">{{ order.customer.name if order.customer else "Unknown" }}</td>
+      <td class="truncate" data-label="Items" title="{% for item in order.items %}{{ item.quantity }}x {{ item.product.name if item.product else '(deleted product)' }}{% if not loop.last %}, {% endif %}{% endfor %}">
         {% for item in order.items %}
           {{ item.quantity }}x {{ item.product.name if item.product else "(deleted product)" }}{% if not loop.last %}, {% endif %}
         {% endfor %}
       </td>
-      <td>${{ "%.2f"|format(order.total_price) }}</td>
-      <td><span class="badge">{{ order.status }}</span></td>
-      <td data-utc="{{ order.created_at.isoformat() }}Z">{{ order.created_at.strftime("%b %d, %Y %H:%M") }} UTC</td>
+      <td data-label="Total">${{ "%.2f"|format(order.total_price) }}</td>
+      <td data-label="Status"><span class="badge">{{ order.status }}</span></td>
+      <td data-label="Placed" data-utc="{{ order.created_at.isoformat() }}Z">{{ order.created_at.strftime("%b %d, %Y %H:%M") }} UTC</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="empty">No orders yet.</div>
 {% endif %}

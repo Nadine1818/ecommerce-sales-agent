@@ -4,21 +4,23 @@
 <h1>Customers</h1>
 
 {% if customers %}
-<table>
+<div class="table-wrap">
+<table class="stack">
   <thead>
-    <tr><th>ID</th><th>Name</th><th>Email</th><th>Orders</th></tr>
+    <tr><th style="width:64px;">ID</th><th style="width:220px;">Name</th><th>Email</th><th style="width:90px;">Orders</th></tr>
   </thead>
   <tbody>
     {% for customer in customers %}
     <tr>
-      <td>{{ customer.id }}</td>
-      <td>{{ customer.name }}</td>
-      <td>{{ customer.email }}</td>
-      <td>{{ customer.orders|length }}</td>
+      <td data-label="ID">{{ customer.id }}</td>
+      <td class="truncate" data-label="Name" title="{{ customer.name }}">{{ customer.name }}</td>
+      <td class="truncate" data-label="Email" title="{{ customer.email }}">{{ customer.email }}</td>
+      <td data-label="Orders">{{ customer.orders|length }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="empty">No customers yet.</div>
 {% endif %}

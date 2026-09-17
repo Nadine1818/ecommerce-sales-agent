@@ -3,7 +3,48 @@
 {% block content %}
 <h1>{{ "Edit" if item else "Add" }} Knowledge Base Entry</h1>
 
-<form method="POST" style="max-width:480px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:24px;">
+<style>
+  .form-panel {
+    max-width: 520px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 28px;
+  }
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input[type="text"],
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: var(--bg);
+    transition: border-color 0.15s ease;
+  }
+  .field input[type="text"]:focus,
+  .field select:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--panel);
+  }
+  .field textarea { resize: vertical; }
+  .form-actions { display: flex; gap: 8px; margin-top: 4px; }
+</style>
+
+<form method="POST" class="form-panel">
 
   {% if item %}
     {# Editing: type is fixed, not selectable. Still given id="item_type"
@@ -11,11 +52,11 @@
        <select> in add mode — one code path for both modes instead of
        two, and no risk of calling toggleFields() against a missing id. #}
     <input type="hidden" name="item_type" id="item_type" value="{{ item_type }}">
-    <p style="font-size:13px; color:var(--ink-soft); margin-top:0;">Type: <strong>{{ item_type }}</strong></p>
+    <p style="font-size:13px; color:var(--ink-soft); margin-top:0;">Type: <span class="badge">{{ item_type }}</span></p>
   {% else %}
-    <div style="margin-bottom:16px;">
-      <label style="display:block; font-size:13px; color:var(--ink-soft); margin-bottom:6px;">Type</label>
-      <select name="item_type" id="item_type" onchange="toggleFields()" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--line); font-family:inherit;">
+    <div class="field">
+      <label>Type</label>
+      <select name="item_type" id="item_type" onchange="toggleFields()">
         <option value="faq">FAQ</option>
         <option value="policy">Policy</option>
       </select>
@@ -27,29 +68,31 @@
      regardless of add/edit mode, instead of duplicating this logic
      both in Jinja (server-side) and JS (client-side). #}
   <div id="faq-fields">
-    <div style="margin-bottom:16px;">
-      <label style="display:block; font-size:13px; color:var(--ink-soft); margin-bottom:6px;">Question</label>
-      <input type="text" name="question" value="{{ item.metadata.question if item else '' }}" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--line); font-family:inherit;">
+    <div class="field">
+      <label>Question</label>
+      <input type="text" name="question" value="{{ item.metadata.question if item else '' }}">
     </div>
-    <div style="margin-bottom:16px;">
-      <label style="display:block; font-size:13px; color:var(--ink-soft); margin-bottom:6px;">Answer</label>
-      <textarea name="answer" rows="3" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--line); font-family:inherit;">{{ item.metadata.answer if item else '' }}</textarea>
+    <div class="field">
+      <label>Answer</label>
+      <textarea name="answer" rows="3">{{ item.metadata.answer if item else '' }}</textarea>
     </div>
   </div>
 
   <div id="policy-fields">
-    <div style="margin-bottom:16px;">
-      <label style="display:block; font-size:13px; color:var(--ink-soft); margin-bottom:6px;">Title</label>
-      <input type="text" name="title" value="{{ item.metadata.title if item else '' }}" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--line); font-family:inherit;">
+    <div class="field">
+      <label>Title</label>
+      <input type="text" name="title" value="{{ item.metadata.title if item else '' }}">
     </div>
-    <div style="margin-bottom:16px;">
-      <label style="display:block; font-size:13px; color:var(--ink-soft); margin-bottom:6px;">Content</label>
-      <textarea name="content" rows="4" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--line); font-family:inherit;">{{ item.metadata.content if item else '' }}</textarea>
+    <div class="field">
+      <label>Content</label>
+      <textarea name="content" rows="4">{{ item.metadata.content if item else '' }}</textarea>
     </div>
   </div>
 
-  <button type="submit" class="btn btn-accent">{{ "Save Changes" if item else "Add Entry" }}</button>
-  <a href="{{ url_for('dashboard.rag_data') }}" class="btn">Cancel</a>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-accent">{{ "Save Changes" if item else "Add Entry" }}</button>
+    <a href="{{ url_for('dashboard.rag_data') }}" class="btn">Cancel</a>
+  </div>
 </form>
 
 <script>
