@@ -19,7 +19,7 @@
       <td class="actions-cell">
         <div class="actions">
           <a href="{{ url_for('dashboard.rag_edit', item_id=faq.id) }}" class="btn">Edit</a>
-          <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=faq.id) }}" onsubmit="return confirm('Delete this FAQ?');" style="display:inline;">
+          <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=faq.id) }}" class="delete-form" data-item-label="this FAQ" style="display:inline;">
             <button type="submit" class="btn btn-danger">Delete</button>
           </form>
         </div>
@@ -46,7 +46,7 @@
       <td class="actions-cell">
         <div class="actions">
           <a href="{{ url_for('dashboard.rag_edit', item_id=policy.id) }}" class="btn">Edit</a>
-          <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=policy.id) }}" onsubmit="return confirm('Delete this policy?');" style="display:inline;">
+          <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=policy.id) }}" class="delete-form" data-item-label="this policy" style="display:inline;">
             <button type="submit" class="btn btn-danger">Delete</button>
           </form>
         </div>
@@ -59,4 +59,75 @@
 {% else %}
 <div class="empty">No policies yet.</div>
 {% endif %}
+
+<div id="confirm-overlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Delete item</h3>
+    <p id="confirm-message">Delete this item? This can't be undone.</p>
+    <div class="confirm-actions">
+      <button type="button" id="confirm-cancel" class="btn">Cancel</button>
+      <button type="button" id="confirm-ok" class="btn btn-danger">Delete</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(35, 34, 31, 0.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  }
+  .confirm-box h3 { margin: 0 0 8px; font-size: 16px; }
+  .confirm-box p { margin: 0 0 20px; font-size: 13.5px; color: var(--ink-soft); }
+  .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+</style>
+
+<script>
+  (function () {
+    const overlay = document.getElementById("confirm-overlay");
+    const message = document.getElementById("confirm-message");
+    const cancelBtn = document.getElementById("confirm-cancel");
+    const okBtn = document.getElementById("confirm-ok");
+    let pendingForm = null;
+
+    function closeModal() {
+      overlay.classList.remove("open");
+      pendingForm = null;
+    }
+
+    document.querySelectorAll(".delete-form").forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        pendingForm = form;
+        message.textContent = "Delete " + form.getAttribute("data-item-label") + "? This can't be undone.";
+        overlay.classList.add("open");
+      });
+    });
+
+    cancelBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) closeModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeModal();
+    });
+    okBtn.addEventListener("click", function () {
+      if (pendingForm) pendingForm.submit();
+    });
+  })();
+</script>
 {% endblock %}
