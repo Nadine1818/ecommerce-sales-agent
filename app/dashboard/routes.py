@@ -140,6 +140,9 @@ def rag_edit(item_id):
 @dashboard_bp.route("/rag/delete/<item_id>", methods=["POST"])
 @login_required(role="admin")
 def rag_delete(item_id):
-    delete_item(item_id)
-    flash("Knowledge base entry deleted.")
+    deleted = delete_item(item_id)
+    if deleted:
+        flash("Knowledge base entry deleted.")
+    else:
+        flash("That entry no longer exists , nothing to delete.")
     return redirect(url_for("dashboard.rag_data"))

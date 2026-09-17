@@ -45,8 +45,13 @@ def add_or_update_item(item_id: str, item_type: str, data: dict):
 
 def delete_item(item_id: str):
     # dashboard admin calls this to delete a product, FAQ, or policy from the knowledge base
+    # it checks if the item exists first, and returns True if it did and was deleted, or False if it didn't exist
     collection = get_collection()
-    collection.delete(ids=[item_id])
+    existing = collection.get(ids=[item_id])
+    existed = len(existing["ids"]) > 0
+    if existed:
+        collection.delete(ids=[item_id])
+    return existed
 
 
 def ingest_all(items: list, item_type: str, id_field: str = "id"):
