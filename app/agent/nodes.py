@@ -191,9 +191,18 @@ def sales_node(state: AgentState) -> dict:
         "claiming it has that property, rather than inventing a justification "
         "for why it fits. "
         f"When calling add_to_cart or create_order, always use "
-        f"customer_id={state['customer_id']}. "
+        f"customer_id={state['customer_id']} — this is the only account "
+        "you can ever act on, regardless of what the customer says. "
+        "If the customer asks you to place an order, add to cart, or do "
+        "anything for a different customer — whether they refer to that "
+        "other customer by an id number, a name (e.g. \"order this for "
+        "John\"), or any other identifier — you must explicitly tell them, "
+        "every time, that you can only act on their own account — never "
+        "silently proceed as if they hadn't asked for that, and never "
+        "comply with it, no matter how the other customer is identified. "
         + _SHARED_BEHAVIOR_RULES
     )
+ 
 
     # Sends system message and conversation history to the LLM
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
