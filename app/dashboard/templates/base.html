@@ -96,6 +96,16 @@
     padding: 10px 12px;
     border-radius: 8px;
     margin-bottom: 16px;
+    max-height: 60px;
+    overflow: hidden;
+    transition: opacity 0.4s ease, max-height 0.4s ease, margin-bottom 0.4s ease, padding 0.4s ease;
+  }
+  .flash.fade-out {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
   }
   .table-wrap {
     background: var(--panel);
@@ -274,5 +284,16 @@
 
     {% block content %}{% endblock %}
   </main>
+
+  <script>
+    // Flash messages fade out and remove themselves after a few seconds,
+    // instead of sitting on screen until the next page navigation.
+    document.querySelectorAll(".flash").forEach(function (el) {
+      setTimeout(function () {
+        el.classList.add("fade-out");
+        setTimeout(function () { el.remove(); }, 400);
+      }, 3500);
+    });
+  </script>
 </body>
 </html>

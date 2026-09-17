@@ -144,6 +144,16 @@
     line-height: 1.4;
     padding: 11px 13px;
     border-radius: 10px;
+    max-height: 80px;
+    overflow: hidden;
+    transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease;
+  }
+  .flash.fade-out {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
   }
   .flash svg { flex: none; width: 15px; height: 15px; margin-top: 1px; }
 
@@ -393,5 +403,14 @@
       {% endif %}
     </div>
   </div>
+
+  <script>
+    document.querySelectorAll(".flash").forEach(function (el) {
+      setTimeout(function () {
+        el.classList.add("fade-out");
+        setTimeout(function () { el.remove(); }, 400);
+      }, 3500);
+    });
+  </script>
 </body>
 </html>
