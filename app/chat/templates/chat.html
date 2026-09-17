@@ -302,7 +302,11 @@
       <div class="log" id="log">
         {% if history %}
           {% for turn in history %}
-            <div class="msg {{ 'human' if turn.role == 'human' else 'ai' }}">{{ turn.content }}</div>
+            {% if turn.role == 'human' %}
+              <div class="msg human">{{ turn.content }}</div>
+            {% else %}
+              <div class="msg ai" data-raw="{{ turn.content }}"></div>
+            {% endif %}
           {% endfor %}
         {% else %}
           <div class="empty-state" id="empty-state">Ask about products, shipping, returns — or say what you'd like to order.</div>
@@ -374,6 +378,15 @@
       log.scrollTop = log.scrollHeight;
       return bubble;
     }
+
+    // Restored history (rendered server-side on page load) only has raw
+    // text in a data-raw attribute — run it through the same
+    // renderMarkdown() live messages use, so a reload doesn't show
+    // literal "**bold**" markers that looked fine before the reload.
+    document.querySelectorAll(".msg.ai[data-raw]").forEach(function (el) {
+      el.innerHTML = renderMarkdown(el.getAttribute("data-raw"));
+    });
+    if (log.scrollHeight > 0) log.scrollTop = log.scrollHeight;
 
     // Conversation stays scoped to whoever is logged in — no picker to
     // switch between anymore; a different customer means logging out
