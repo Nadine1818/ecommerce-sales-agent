@@ -50,5 +50,18 @@ def create_app(test_config=None):
     app.register_blueprint(cart_bp, url_prefix="/cart")
     app.register_blueprint(orders_bp, url_prefix="/orders")
     app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
+
+    @app.after_request
+    def disable_caching(response):
+        # Every page here shows content tied to who's logged in (chat
+        # history, cart, orders, dashboard data). Without this, browsers
+        # can restore a stale snapshot via the back/forward button
+        # (bfcache) without ever asking the server again — so hitting
+        # Back after logging out, or after switching accounts, could
+        # show a previous user's page exactly as it looked before,
+        # even though the actual session was correctly cleared server-side.
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        return response
     
     return app
