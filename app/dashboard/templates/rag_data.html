@@ -16,11 +16,13 @@
     <tr>
       <td class="truncate" data-label="Question" title="{{ faq.metadata.question }}">{{ faq.metadata.question }}</td>
       <td class="truncate" data-label="Answer" title="{{ faq.metadata.answer }}">{{ faq.metadata.answer }}</td>
-      <td class="actions">
-        <a href="{{ url_for('dashboard.rag_edit', item_id=faq.id) }}" class="btn">Edit</a>
-        <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=faq.id) }}" onsubmit="return confirm('Delete this FAQ?');" style="display:inline;">
-          <button type="submit" class="btn btn-danger">Delete</button>
-        </form>
+      <td class="actions-cell">
+        <div class="actions">
+          <a href="{{ url_for('dashboard.rag_edit', item_id=faq.id) }}" class="btn">Edit</a>
+          <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=faq.id) }}" onsubmit="return confirm('Delete this FAQ?');" style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
+        </div>
       </td>
     </tr>
     {% endfor %}
@@ -41,11 +43,13 @@
     <tr>
       <td class="truncate" data-label="Title" title="{{ policy.metadata.title }}">{{ policy.metadata.title }}</td>
       <td class="truncate" data-label="Content" title="{{ policy.metadata.content }}">{{ policy.metadata.content }}</td>
-      <td class="actions">
-        <a href="{{ url_for('dashboard.rag_edit', item_id=policy.id) }}" class="btn">Edit</a>
-        <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=policy.id) }}" onsubmit="return confirm('Delete this policy?');" style="display:inline;">
-          <button type="submit" class="btn btn-danger">Delete</button>
-        </form>
+      <td class="actions-cell">
+        <div class="actions">
+          <a href="{{ url_for('dashboard.rag_edit', item_id=policy.id) }}" class="btn">Edit</a>
+          <form method="POST" action="{{ url_for('dashboard.rag_delete', item_id=policy.id) }}" onsubmit="return confirm('Delete this policy?');" style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
+        </div>
       </td>
     </tr>
     {% endfor %}

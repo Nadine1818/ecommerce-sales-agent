@@ -163,6 +163,9 @@
   .btn-accent:hover { background: #32485e; border-color: #32485e; }
   .btn-danger { color: var(--danger); border-color: var(--line); background: transparent; }
   .btn-danger:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-bg); }
+  /* .actions is a div nested inside the <td>, not the cell itself —
+     display:flex directly on a table cell breaks its collapsed border
+     rendering (the divider line looks cut off under that column). */
   .actions { display: flex; gap: 8px; white-space: nowrap; }
   .badge {
     display: inline-block;
@@ -174,7 +177,7 @@
     color: var(--ink-soft);
   }
 
-  @media (max-width: 680px) {
+  @media (max-width: 760px) {
     header {
       flex-direction: column;
       align-items: stretch;
@@ -240,12 +243,8 @@
       color: var(--ink-soft);
       margin-bottom: 4px;
     }
-    table.stack td.actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    table.stack td.actions::before { content: none; }
+    table.stack td.actions-cell::before { content: none; }
+    table.stack td.actions-cell .actions { justify-content: flex-end; }
   }
 </style>
 </head>
