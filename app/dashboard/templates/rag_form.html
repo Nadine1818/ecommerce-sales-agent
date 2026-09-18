@@ -1,48 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ "Edit" if item else "Add" }} Knowledge Base Entry{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/rag_form.css') }}">{% endblock %}
 {% block content %}
 <h1>{{ "Edit" if item else "Add" }} Knowledge Base Entry</h1>
-
-<style>
-  .form-panel {
-    max-width: 520px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    padding: 28px;
-  }
-  .field { margin-bottom: 18px; }
-  .field label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    margin-bottom: 6px;
-  }
-  .field input[type="text"],
-  .field select,
-  .field textarea {
-    width: 100%;
-    padding: 9px 11px;
-    border-radius: 7px;
-    border: 1px solid var(--line);
-    font-family: inherit;
-    font-size: 13.5px;
-    color: var(--ink);
-    background: var(--bg);
-    transition: border-color 0.15s ease;
-  }
-  .field input[type="text"]:focus,
-  .field select:focus,
-  .field textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: var(--panel);
-  }
-  .field textarea { resize: vertical; }
-  .form-actions { display: flex; gap: 8px; margin-top: 4px; }
-</style>
 
 <form method="POST" class="form-panel">
 

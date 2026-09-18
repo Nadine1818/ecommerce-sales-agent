@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Knowledge Base{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/rag_data.css') }}">{% endblock %}
 {% block content %}
 <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
   <h1 style="margin:0;">Knowledge Base</h1>
@@ -70,31 +71,6 @@
     </div>
   </div>
 </div>
-
-<style>
-  .confirm-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(35, 34, 31, 0.45);
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-  }
-  .confirm-overlay.open { display: flex; }
-  .confirm-box {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 24px;
-    width: 100%;
-    max-width: 360px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-  }
-  .confirm-box h3 { margin: 0 0 8px; font-size: 16px; }
-  .confirm-box p { margin: 0 0 20px; font-size: 13.5px; color: var(--ink-soft); }
-  .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
-</style>
 
 <script>
   (function () {

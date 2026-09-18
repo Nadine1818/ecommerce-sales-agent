@@ -4,255 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register — Store Assistant</title>
-<style>
-  :root {
-    --bg: #f6f4ef;
-    --panel: #ffffff;
-    --ink: #23221f;
-    --ink-soft: #6b6a63;
-    --ink-faint: #9a988e;
-    --line: #e3e0d6;
-    --accent: #3d5a6c;
-    --accent-dark: #2c4351;
-    --accent-soft: #e8eef1;
-    --accent-ink: #ffffff;
-    --error-bg: #fbe9e7;
-    --error-ink: #8a3a2e;
-    --shadow: 0 20px 50px -15px rgba(35, 34, 31, 0.18);
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    margin: 0;
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 24px;
-  }
-
-  .auth-wrap {
-    width: 100%;
-    max-width: 880px;
-    min-height: 560px;
-    display: grid;
-    grid-template-columns: 1.05fr 1fr;
-    background: var(--panel);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-  }
-
-  /* Brand panel */
-  .brand {
-    position: relative;
-    background:
-      radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 45%),
-      linear-gradient(155deg, var(--accent) 0%, var(--accent-dark) 100%);
-    color: var(--accent-ink);
-    padding: 44px 40px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .brand::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image:
-      radial-gradient(circle at 85% 15%, rgba(255,255,255,0.12) 0, rgba(255,255,255,0) 55%),
-      radial-gradient(circle at 15% 90%, rgba(255,255,255,0.08) 0, rgba(255,255,255,0) 50%);
-    pointer-events: none;
-  }
-  .brand-mark {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 16px;
-    letter-spacing: -0.01em;
-    position: relative;
-  }
-  .brand-mark .logo-dot {
-    width: 30px;
-    height: 30px;
-    border-radius: 9px;
-    background: rgba(255,255,255,0.16);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(255,255,255,0.28);
-  }
-  .brand-mark svg { width: 16px; height: 16px; }
-
-  .brand-copy {
-    position: relative;
-    margin-top: 10%;
-  }
-  .brand-copy h2 {
-    font-size: 27px;
-    line-height: 1.3;
-    font-weight: 650;
-    letter-spacing: -0.015em;
-    margin: 0 0 14px;
-  }
-  .brand-copy p {
-    font-size: 14.5px;
-    line-height: 1.6;
-    color: rgba(255,255,255,0.78);
-    margin: 0 0 26px;
-    max-width: 320px;
-  }
-
-  .brand-features {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 13px;
-    position: relative;
-  }
-  .brand-features li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13.5px;
-    color: rgba(255,255,255,0.9);
-  }
-  .brand-features li svg {
-    flex: none;
-    width: 16px;
-    height: 16px;
-    color: rgba(255,255,255,0.85);
-  }
-
-  .brand-footer {
-    position: relative;
-    font-size: 12px;
-    color: rgba(255,255,255,0.55);
-  }
-
-  /* Form panel */
-  .form-panel {
-    padding: 48px 44px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .form-head { margin-bottom: 28px; }
-  .form-head h1 {
-    font-size: 23px;
-    font-weight: 650;
-    margin: 0 0 6px;
-    letter-spacing: -0.015em;
-  }
-  .form-head p {
-    font-size: 13.5px;
-    color: var(--ink-soft);
-    margin: 0;
-  }
-
-  .flash {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    background: var(--error-bg);
-    color: var(--error-ink);
-    font-size: 13.5px;
-    line-height: 1.4;
-    padding: 11px 13px;
-    border-radius: 10px;
-    margin-bottom: 18px;
-    max-height: 80px;
-    overflow: hidden;
-    transition: opacity 0.4s ease, max-height 0.4s ease, margin-bottom 0.4s ease, padding 0.4s ease;
-  }
-  .flash.fade-out {
-    opacity: 0;
-    max-height: 0;
-    margin-bottom: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-  .flash svg { flex: none; width: 15px; height: 15px; margin-top: 1px; }
-
-  label {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 7px;
-  }
-  .field { margin-bottom: 17px; }
-  .input-group { position: relative; }
-  .input-group svg {
-    position: absolute;
-    left: 13px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    color: var(--ink-faint);
-    pointer-events: none;
-  }
-  input[type="text"], input[type="email"], input[type="password"] {
-    width: 100%;
-    font-family: inherit;
-    font-size: 14.5px;
-    padding: 11px 12px 11px 38px;
-    border-radius: 9px;
-    border: 1px solid var(--line);
-    background: #fdfcfa;
-    color: var(--ink);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  }
-  input::placeholder { color: var(--ink-faint); }
-  input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
-    background: #fff;
-  }
-
-  button {
-    width: 100%;
-    font-family: inherit;
-    font-size: 14.5px;
-    font-weight: 650;
-    padding: 12px;
-    border-radius: 9px;
-    border: none;
-    background: var(--accent);
-    color: var(--accent-ink);
-    cursor: pointer;
-    margin-top: 6px;
-    letter-spacing: -0.005em;
-    transition: background 0.15s ease, transform 0.05s ease;
-  }
-  button:hover { background: var(--accent-dark); }
-  button:active { transform: translateY(1px); }
-
-  .switch {
-    text-align: center;
-    font-size: 13.5px;
-    color: var(--ink-soft);
-    margin-top: 22px;
-  }
-  .switch a { color: var(--accent); text-decoration: none; font-weight: 650; }
-  .switch a:hover { text-decoration: underline; }
-
-  @media (max-width: 760px) {
-    .auth-wrap { grid-template-columns: 1fr; min-height: 0; }
-    .brand { display: none; }
-    .form-panel { padding: 38px 26px; }
-  }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
   <div class="auth-wrap">
@@ -266,12 +18,12 @@
 
       <div class="brand-copy">
         <h2>Create an account and get started in minutes.</h2>
-        <p>Sign up to chat with the assistant, browse products, and track your orders.</p>
+        <p>Sign up to chat with the assistant, browse products, and place orders.</p>
 
         <ul class="brand-features">
           <li>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-            Personalized product recommendations
+            Product search powered by AI
           </li>
           <li>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -279,7 +31,7 @@
           </li>
           <li>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-            Place and track orders in chat
+            Place orders directly in chat
           </li>
         </ul>
       </div>

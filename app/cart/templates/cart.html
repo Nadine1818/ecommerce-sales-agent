@@ -4,344 +4,50 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Your Cart — Store Assistant</title>
-<style>
-  :root {
-    --bg: #f6f4ef;
-    --panel: #ffffff;
-    --ink: #23221f;
-    --ink-soft: #6b6a63;
-    --ink-faint: #9a988e;
-    --line: #e3e0d6;
-    --accent: #3d5a6c;
-    --accent-dark: #2c4351;
-    --accent-soft: #e8eef1;
-    --accent-ink: #ffffff;
-    --error-bg: #fbe9e7;
-    --error-ink: #8a3a2e;
-    --shadow: 0 20px 50px -20px rgba(35, 34, 31, 0.20);
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 32px 16px;
-  }
-
-  .app {
-    width: 100%;
-    max-width: 680px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .brand-mark {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .brand-mark .logo-dot {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: linear-gradient(155deg, var(--accent) 0%, var(--accent-dark) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-  }
-  .brand-mark .logo-dot svg { width: 17px; height: 17px; color: #fff; }
-
-  header h1 {
-    font-size: 18.5px;
-    font-weight: 650;
-    margin: 0;
-    letter-spacing: -0.015em;
-  }
-
-  header .subtitle {
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    margin-top: 1px;
-  }
-
-  .nav {
-    display: flex;
-    gap: 4px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 4px;
-  }
-  .nav a {
-    padding: 7px 14px;
-    border-radius: 7px;
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .nav a:hover { color: var(--ink); background: var(--accent-soft); }
-  .nav a.active { color: var(--accent-ink); background: var(--accent); }
-
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 13.5px;
-    color: var(--ink-soft);
-  }
-
-  .user-info .user-name {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .user-info .avatar {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent-dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11.5px;
-    font-weight: 700;
-    flex: none;
-  }
-
-  .user-info a { color: var(--accent); text-decoration: none; font-weight: 650; }
-  .user-info a:hover { text-decoration: underline; }
-
-  .flash {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    background: var(--accent-soft);
-    color: var(--accent-dark);
-    font-size: 13.5px;
-    line-height: 1.4;
-    padding: 11px 13px;
-    border-radius: 10px;
-    max-height: 80px;
-    overflow: hidden;
-    transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease;
-  }
-  .flash.fade-out {
-    opacity: 0;
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    margin: 0;
-  }
-  .flash svg { flex: none; width: 15px; height: 15px; margin-top: 1px; }
-
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-  }
-
-  .cart-list {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .cart-item {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 22px;
-    border-bottom: 1px solid var(--line);
-  }
-  .cart-item:last-child { border-bottom: none; }
-
-  .item-info { flex: 1; min-width: 0; }
-  .item-name {
-    font-size: 14.5px;
-    font-weight: 650;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .item-price { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
-
-  .qty-form {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: none;
-  }
-  .qty-form input[type="number"] {
-    width: 56px;
-    font-family: inherit;
-    font-size: 14px;
-    padding: 7px 8px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    background: #fdfcfa;
-    color: var(--ink);
-    text-align: center;
-  }
-  .qty-form input[type="number"]:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
-    background: #fff;
-  }
-
-  .btn-ghost {
-    font-family: inherit;
-    font-size: 12.5px;
-    font-weight: 650;
-    padding: 7px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    background: #fff;
-    color: var(--ink-soft);
-    cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
-  .item-subtotal {
-    flex: none;
-    width: 70px;
-    text-align: right;
-    font-size: 14.5px;
-    font-weight: 650;
-  }
-
-  .btn-icon {
-    flex: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--ink-faint);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .btn-icon:hover { background: var(--error-bg); color: var(--error-ink); }
-  .btn-icon svg { width: 16px; height: 16px; }
-
-  .cart-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 20px 22px;
-    background: #fdfcfa;
-    border-top: 1px solid var(--line);
-  }
-
-  .cart-total {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    font-size: 13.5px;
-    color: var(--ink-soft);
-  }
-  .cart-total strong { font-size: 20px; color: var(--ink); letter-spacing: -0.01em; }
-
-  .btn-primary {
-    font-family: inherit;
-    font-size: 14.5px;
-    font-weight: 650;
-    padding: 11px 22px;
-    border-radius: 9px;
-    border: none;
-    background: var(--accent);
-    color: var(--accent-ink);
-    cursor: pointer;
-    transition: background 0.15s ease, transform 0.05s ease;
-  }
-  .btn-primary:hover { background: var(--accent-dark); }
-  .btn-primary:active { transform: translateY(1px); }
-
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 14px;
-    padding: 64px 32px;
-    color: var(--ink-soft);
-  }
-  .empty-state svg { width: 40px; height: 40px; color: var(--ink-faint); }
-  .empty-state p { margin: 0; font-size: 14px; max-width: 300px; line-height: 1.55; }
-  .empty-state a {
-    font-size: 13.5px;
-    font-weight: 650;
-    color: var(--accent-ink);
-    background: var(--accent);
-    text-decoration: none;
-    padding: 10px 18px;
-    border-radius: 9px;
-    transition: background 0.15s ease;
-  }
-  .empty-state a:hover { background: var(--accent-dark); }
-
-  @media (max-width: 480px) {
-    header h1 { font-size: 16.5px; }
-    .user-info .user-name span:not(.avatar) { display: none; }
-    .cart-item { flex-wrap: wrap; }
-    .item-info { flex-basis: 100%; }
-    .item-subtotal { width: auto; margin-left: auto; }
-  }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
 </head>
 <body>
   <div class="app">
     <header>
-      <div class="brand-mark">
-        <span class="logo-dot">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293A1 1 0 0 0 5.414 17H17M17 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM9 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
-        </span>
-        <div>
-          <h1>Your Cart</h1>
-          <div class="subtitle">Review items before checkout</div>
+      <div class="topbar">
+        <div class="brand-mark">
+          <span class="logo-dot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293A1 1 0 0 0 5.414 17H17M17 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM9 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
+          </span>
+          <div>
+            <h1>Your Cart</h1>
+            <div class="subtitle">Review items before checkout</div>
+          </div>
         </div>
-      </div>
-      <nav class="nav">
-        <a href="{{ url_for('chat.index') }}">Chat</a>
-        <a href="{{ url_for('cart.index') }}" class="active">Cart</a>
-        <a href="{{ url_for('orders.index') }}">Orders</a>
-      </nav>
-      <div class="user-info">
-        <span class="user-name">
-          <span class="avatar">{{ user_name[:1]|upper }}</span>
-          <span>{{ user_name }}</span>
-        </span>
-        <a href="{{ url_for('auth.logout') }}">Log out</a>
+        <div class="nav-row">
+          <nav class="nav">
+            <a href="{{ url_for('chat.index') }}">Chat</a>
+            {% if user_name %}
+            <a href="{{ url_for('cart.index') }}" class="active">Cart</a>
+            <a href="{{ url_for('orders.index') }}">Orders</a>
+            {% endif %}
+          </nav>
+          {% if messenger_link %}
+          <a class="messenger-badge" href="{{ messenger_link }}" target="_blank" rel="noopener" title="Chat on Messenger" aria-label="Chat on Messenger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 0 1-2.555-.337c-.246-.066-.508-.038-.734.083l-2.023 1.08a.563.563 0 0 1-.813-.622l.489-1.955a.563.563 0 0 0-.19-.579C4.24 16.354 3 14.318 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
+          </a>
+          {% endif %}
+        </div>
+        {% if user_name %}
+        <div class="account">
+          <span class="user-name">
+            <span class="avatar">{{ user_name[:1]|upper }}</span>
+            <span>{{ user_name }}</span>
+          </span>
+          <a class="text-link" href="{{ url_for('auth.logout') }}">Log out</a>
+        </div>
+        {% else %}
+        <div class="account">
+          <span class="guest-label">Browsing as guest</span>
+          <a class="text-link" href="{{ url_for('auth.login') }}">Log in</a>
+          <a class="cta-link" href="{{ url_for('auth.register') }}">Sign up</a>
+        </div>
+        {% endif %}
       </div>
     </header>
 

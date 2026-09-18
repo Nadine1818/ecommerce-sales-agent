@@ -2,11 +2,19 @@
 accounts , there's no signup path that lets someone become an admin,
 the one admin account is seeded directly in seed.py"""
 
+import re
+
 from flask import flash, redirect, render_template, request, session, url_for
 
 from app.auth import auth_bp
 from app.extensions import db
 from app.models import User
+
+# Simple format check, not a full RFC 5322 validator, just enough to
+# catch "not an email" typos like missing @ or missing domain.
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+MIN_PASSWORD_LENGTH = 8
 
 # GET to /register shows the registration form, POST to /register processes it
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -18,6 +26,14 @@ def register():
 
         if not name or not email or not password:
             flash("All fields are required.")
+            return render_template("register.html")
+
+        if not EMAIL_RE.match(email):
+            flash("Please enter a valid email address.")
+            return render_template("register.html")
+
+        if len(password) < MIN_PASSWORD_LENGTH:
+            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long.")
             return render_template("register.html")
 
         if User.query.filter_by(email=email).first():

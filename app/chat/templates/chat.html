@@ -4,287 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Store Assistant</title>
-<style>
-  :root {
-    --bg: #f6f4ef;
-    --panel: #ffffff;
-    --ink: #23221f;
-    --ink-soft: #6b6a63;
-    --ink-faint: #9a988e;
-    --line: #e3e0d6;
-    --accent: #3d5a6c;
-    --accent-dark: #2c4351;
-    --accent-soft: #e8eef1;
-    --accent-ink: #ffffff;
-    --ai-bubble: #f0eee6;
-    --shadow: 0 20px 50px -20px rgba(35, 34, 31, 0.20);
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 32px 16px;
-  }
-
-  .app {
-    width: 100%;
-    max-width: 680px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .nav {
-    display: flex;
-    gap: 4px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 4px;
-  }
-  .nav a {
-    padding: 7px 14px;
-    border-radius: 7px;
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .nav a:hover { color: var(--ink); background: var(--accent-soft); }
-  .nav a.active { color: var(--accent-ink); background: var(--accent); }
-
-  .brand-mark {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .brand-mark .logo-dot {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: linear-gradient(155deg, var(--accent) 0%, var(--accent-dark) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-  }
-  .brand-mark .logo-dot svg { width: 17px; height: 17px; color: #fff; }
-
-  header h1 {
-    font-size: 18.5px;
-    font-weight: 650;
-    margin: 0;
-    letter-spacing: -0.015em;
-  }
-
-  header .subtitle {
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    margin-top: 1px;
-  }
-
-  select {
-    font-family: inherit;
-    font-size: 14px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    background: var(--panel);
-    color: var(--ink);
-  }
-
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 13.5px;
-    color: var(--ink-soft);
-  }
-
-  .user-info .user-name {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .user-info .avatar {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent-dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11.5px;
-    font-weight: 700;
-    flex: none;
-  }
-
-  .user-info a {
-    color: var(--accent);
-    text-decoration: none;
-    font-weight: 650;
-  }
-  .user-info a:hover { text-decoration: underline; }
-
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    height: 70vh;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-  }
-
-  .log {
-    flex: 1;
-    overflow-y: auto;
-    padding: 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .msg {
-    max-width: 78%;
-    padding: 10px 14px;
-    border-radius: 14px;
-    font-size: 14.5px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-  }
-
-  .msg.human {
-    align-self: flex-end;
-    background: var(--accent);
-    color: var(--accent-ink);
-    border-bottom-right-radius: 4px;
-  }
-
-  .msg.ai {
-    align-self: flex-start;
-    background: var(--ai-bubble);
-    color: var(--ink);
-    border-bottom-left-radius: 4px;
-  }
-
-  .msg.pending {
-    opacity: 0.55;
-  }
-
-  .msg p {
-    margin: 0 0 8px;
-  }
-  .msg p:last-child {
-    margin-bottom: 0;
-  }
-  .msg ul {
-    margin: 0 0 8px;
-    padding-left: 20px;
-  }
-  .msg ul:last-child {
-    margin-bottom: 0;
-  }
-  .msg li {
-    margin-bottom: 2px;
-  }
-
-  .empty-state {
-    margin: auto;
-    color: var(--ink-soft);
-    font-size: 14px;
-    text-align: center;
-    max-width: 320px;
-    line-height: 1.55;
-  }
-
-  form {
-    display: flex;
-    gap: 10px;
-    padding: 14px;
-    border-top: 1px solid var(--line);
-    background: #fdfcfa;
-  }
-
-  input[type="text"] {
-    flex: 1;
-    font-family: inherit;
-    font-size: 14.5px;
-    padding: 11px 14px;
-    border-radius: 9px;
-    border: 1px solid var(--line);
-    background: #fff;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  input[type="text"]:focus, select:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
-  }
-
-  button {
-    font-family: inherit;
-    font-size: 14.5px;
-    font-weight: 650;
-    padding: 10px 20px;
-    border-radius: 9px;
-    border: none;
-    background: var(--accent);
-    color: var(--accent-ink);
-    cursor: pointer;
-    transition: background 0.15s ease, transform 0.05s ease;
-  }
-
-  button:hover:not(:disabled) { background: var(--accent-dark); }
-  button:active:not(:disabled) { transform: translateY(1px); }
-
-  button:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-
-  .login-prompt {
-    align-self: flex-start;
-    display: inline-flex;
-    text-decoration: none;
-    font-size: 13.5px;
-    font-weight: 650;
-    padding: 8px 16px;
-    border-radius: 8px;
-    background: var(--accent-soft);
-    color: var(--accent-dark);
-    margin-top: -2px;
-  }
-  .login-prompt:hover { background: var(--line); }
-
-  @media (max-width: 480px) {
-    header h1 { font-size: 16.5px; }
-    .user-info .user-name span:not(.avatar) { display: none; }
-  }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
 </head>
 <body>
   <div class="app">
@@ -298,29 +18,34 @@
           <div class="subtitle">Sales &amp; customer support</div>
         </div>
       </div>
-      <nav class="nav">
-        <a href="{{ url_for('chat.index') }}" class="active">Chat</a>
-        {% if user_name %}
-        <a href="{{ url_for('cart.index') }}">Cart</a>
-        <a href="{{ url_for('orders.index') }}">Orders</a>
-        {% endif %}
+      <div class="nav-cluster">
+        <nav class="nav">
+          <a href="{{ url_for('chat.index') }}" class="active">Chat</a>
+          {% if user_name %}
+          <a href="{{ url_for('cart.index') }}">Cart</a>
+          <a href="{{ url_for('orders.index') }}">Orders</a>
+          {% endif %}
+        </nav>
         {% if messenger_link %}
-        <a href="{{ messenger_link }}" target="_blank">Chat on Messenger</a>
+        <a class="messenger-badge" href="{{ messenger_link }}" target="_blank" rel="noopener" title="Continue this chat on Facebook Messenger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 0 1-2.555-.337c-.246-.066-.508-.038-.734.083l-2.023 1.08a.563.563 0 0 1-.813-.622l.489-1.955a.563.563 0 0 0-.19-.579C4.24 16.354 3 14.318 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg>
+          <span>Messenger</span>
+        </a>
         {% endif %}
-      </nav>
+      </div>
       {% if user_name %}
-      <div class="user-info">
+      <div class="account">
         <span class="user-name">
           <span class="avatar">{{ user_name[:1]|upper }}</span>
           <span>{{ user_name }}</span>
         </span>
-        <a href="{{ url_for('auth.logout') }}">Log out</a>
+        <a class="text-link" href="{{ url_for('auth.logout') }}">Log out</a>
       </div>
       {% else %}
-      <div class="user-info">
-        <span>Browsing as guest</span>
-        <a href="{{ url_for('auth.login') }}">Log in</a>
-        <a href="{{ url_for('auth.register') }}">Sign up</a>
+      <div class="account">
+        <span class="guest-label">Browsing as guest</span>
+        <a class="text-link" href="{{ url_for('auth.login') }}">Log in</a>
+        <a class="cta-link" href="{{ url_for('auth.register') }}">Sign up</a>
       </div>
       {% endif %}
     </header>
@@ -336,7 +61,7 @@
             {% endif %}
           {% endfor %}
         {% else %}
-          <div class="empty-state" id="empty-state">Ask about products, shipping, returns — or say what you'd like to order.</div>
+          <div class="empty-state" id="empty-state">Ask about our products or store policies — or let us know what you'd like to order.</div>
         {% endif %}
       </div>
       <form id="chat-form">

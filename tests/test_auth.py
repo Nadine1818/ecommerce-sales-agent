@@ -25,7 +25,7 @@ def test_register_page_renders_form(client):
 def test_register_success_creates_user_and_logs_in(client, app):
     response = client.post(
         "/auth/register",
-        data={"name": "Ada Lovelace", "email": "Ada@Example.com", "password": "s3cret"},
+        data={"name": "Ada Lovelace", "email": "Ada@Example.com", "password": "s3cret123"},
     )
 
     assert response.status_code == 302
@@ -37,8 +37,8 @@ def test_register_success_creates_user_and_logs_in(client, app):
         assert user.name == "Ada Lovelace"
         assert user.role == "customer"
         # password must never be stored in plaintext
-        assert user.password_hash != "s3cret"
-        assert user.check_password("s3cret")
+        assert user.password_hash != "s3cret123"
+        assert user.check_password("s3cret123")
 
     # the register call above logs the user straight in
     chat_response = client.get("/chat/")
@@ -64,16 +64,55 @@ def test_register_missing_or_blank_fields_rejected(client, app, payload):
         assert User.query.count() == 0
 
 
+@pytest.mark.parametrize(
+    "bad_email",
+    ["not-an-email", "missing-domain@", "@missing-local.com", "no-at-sign.com", "spaces in@example.com"],
+)
+def test_register_invalid_email_format_rejected(client, app, bad_email):
+    response = client.post(
+        "/auth/register",
+        data={"name": "A", "email": bad_email, "password": "password1"},
+    )
+
+    assert response.status_code == 200
+    assert b"Please enter a valid email address." in response.data
+    with app.app_context():
+        assert User.query.count() == 0
+
+
+def test_register_password_too_short_rejected(client, app):
+    response = client.post(
+        "/auth/register",
+        data={"name": "A", "email": "short@example.com", "password": "short1"},
+    )
+
+    assert response.status_code == 200
+    assert b"Password must be at least 8 characters long." in response.data
+    with app.app_context():
+        assert User.query.count() == 0
+
+
+def test_register_password_exactly_minimum_length_accepted(client, app):
+    response = client.post(
+        "/auth/register",
+        data={"name": "A", "email": "exact@example.com", "password": "12345678"},
+    )
+
+    assert response.status_code == 302
+    with app.app_context():
+        assert User.query.filter_by(email="exact@example.com").first() is not None
+
+
 def test_register_duplicate_email_rejected(client, app):
     client.post(
         "/auth/register",
-        data={"name": "First", "email": "dup@example.com", "password": "pw1"},
+        data={"name": "First", "email": "dup@example.com", "password": "password1"},
     )
     client.get("/auth/logout")
 
     response = client.post(
         "/auth/register",
-        data={"name": "Second", "email": "dup@example.com", "password": "pw2"},
+        data={"name": "Second", "email": "dup@example.com", "password": "password2"},
     )
 
     assert response.status_code == 200
@@ -85,13 +124,13 @@ def test_register_duplicate_email_rejected(client, app):
 def test_register_duplicate_email_case_insensitive(client, app):
     client.post(
         "/auth/register",
-        data={"name": "First", "email": "same@example.com", "password": "pw1"},
+        data={"name": "First", "email": "same@example.com", "password": "password1"},
     )
     client.get("/auth/logout")
 
     response = client.post(
         "/auth/register",
-        data={"name": "Second", "email": "SAME@EXAMPLE.COM", "password": "pw2"},
+        data={"name": "Second", "email": "SAME@EXAMPLE.COM", "password": "password2"},
     )
 
     assert b"already exists" in response.data
@@ -102,7 +141,7 @@ def test_register_duplicate_email_case_insensitive(client, app):
 def test_register_email_normalized_lowercase_and_stripped(client, app):
     client.post(
         "/auth/register",
-        data={"name": "Padded", "email": "  Padded@Example.COM  ", "password": "pw"},
+        data={"name": "Padded", "email": "  Padded@Example.COM  ", "password": "password1"},
     )
 
     with app.app_context():
@@ -114,7 +153,7 @@ def test_register_cannot_self_assign_admin_role(client, app):
     including one — the route must ignore it and always create customers."""
     response = client.post(
         "/auth/register",
-        data={"name": "Wannabe Admin", "email": "wannabe@example.com", "password": "pw", "role": "admin"},
+        data={"name": "Wannabe Admin", "email": "wannabe@example.com", "password": "password1", "role": "admin"},
     )
 
     assert response.status_code == 302
@@ -125,23 +164,23 @@ def test_register_cannot_self_assign_admin_role(client, app):
 
 def test_register_password_with_leading_trailing_spaces_preserved(client, app):
     """Unlike name/email, password is intentionally NOT stripped — a
-    password of " pw " and "pw" must be treated as different secrets."""
+    password of " password1 " and "password1" must be treated as different secrets."""
     client.post(
         "/auth/register",
-        data={"name": "A", "email": "spacey@example.com", "password": " pw "},
+        data={"name": "A", "email": "spacey@example.com", "password": " password1 "},
     )
 
     with app.app_context():
         user = User.query.filter_by(email="spacey@example.com").first()
-        assert user.check_password(" pw ") is True
-        assert user.check_password("pw") is False
+        assert user.check_password(" password1 ") is True
+        assert user.check_password("password1") is False
 
 
 def test_register_xss_payload_in_name_is_escaped_on_render(client):
     payload = "<script>alert(1)</script>"
     client.post(
         "/auth/register",
-        data={"name": payload, "email": "xss@example.com", "password": "pw"},
+        data={"name": payload, "email": "xss@example.com", "password": "password1"},
     )
 
     chat_response = client.get("/chat/")
@@ -157,7 +196,7 @@ def test_login_page_renders_form(client):
     assert b"<form" in response.data
 
 
-def _register(client, name="Bob", email="bob@example.com", password="hunter2"):
+def _register(client, name="Bob", email="bob@example.com", password="hunter22"):
     client.post("/auth/register", data={"name": name, "email": email, "password": password})
     client.get("/auth/logout")
 
@@ -165,7 +204,7 @@ def _register(client, name="Bob", email="bob@example.com", password="hunter2"):
 def test_login_success(client):
     _register(client)
 
-    response = client.post("/auth/login", data={"email": "bob@example.com", "password": "hunter2"})
+    response = client.post("/auth/login", data={"email": "bob@example.com", "password": "hunter22"})
 
     assert response.status_code == 302
     assert response.headers["Location"] == "/chat/"
@@ -210,7 +249,7 @@ def test_login_nonexistent_and_wrong_password_give_identical_message(client):
 def test_login_email_case_insensitive(client):
     _register(client, email="case@example.com")
 
-    response = client.post("/auth/login", data={"email": "CASE@Example.com", "password": "hunter2"})
+    response = client.post("/auth/login", data={"email": "CASE@Example.com", "password": "hunter22"})
 
     assert response.status_code == 302
     assert response.headers["Location"] == "/chat/"
@@ -255,7 +294,7 @@ def test_login_does_not_crash_on_missing_form_fields(client):
 
 def test_logout_clears_session(client):
     _register(client)
-    client.post("/auth/login", data={"email": "bob@example.com", "password": "hunter2"})
+    client.post("/auth/login", data={"email": "bob@example.com", "password": "hunter22"})
     assert client.get("/chat/").status_code == 200
 
     response = client.get("/auth/logout")
