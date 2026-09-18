@@ -2,11 +2,14 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask
+from flask_migrate import Migrate
 
 from app.extensions import db
 
 _project_root = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 load_dotenv(os.path.join(_project_root, ".env"))
+
+migrate = Migrate()
 
 def create_app(test_config=None):
     load_dotenv()
@@ -28,7 +31,7 @@ def create_app(test_config=None):
 
     # attach the shared db instance to this specific app instance
     db.init_app(app)
-
+    migrate.init_app(app, db)
     with app.app_context():
         # context is required to create the database tables, because db.Model needs to know which app it's associated with
         # importing models here ensures that all the model classes are registered with SQLAlchemy before calling create_all()

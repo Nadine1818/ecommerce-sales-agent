@@ -15,6 +15,11 @@ class User(db.Model):
     # there's no signup path that lets someone set their own role to admin.
     role = db.Column(db.String(20), nullable=False, default="customer")
 
+    # The Messenger Platform ID for this user, used to send messages
+    # nullable=True because not all users will have a Messenger PSID
+    # unique=True because each Messenger PSID corresponds to exactly one user in our system
+    messenger_psid = db.Column(db.String(100), unique=True, nullable=True)
+
     # do user.orders to see order history.
     # Kept as "customer" here (not "user") since, domain-wise, this
     # relationship represents "the customer who placed this order" 
