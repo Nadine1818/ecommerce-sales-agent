@@ -13,7 +13,8 @@ class AgentState(TypedDict):
 
     # The ID of the customer who initiated the conversation. 
     # This is used to retrieve context from the database.
-    customer_id: int
+    # none for a guest user, or the user's id for a logged-in customer.
+    customer_id: Optional[int]
 
     # Set by classify_intent. "sales" or "customer_service".
     intent: Optional[str]

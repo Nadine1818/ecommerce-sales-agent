@@ -4,7 +4,7 @@ tools are thin wrappers over retrieve(), which needs the embedding
 model/vector store and is exercised by tests/manual/check_retrieve.py
 instead.)"""
 
-from app.agent.tools import add_to_cart, check_product_availability, create_order
+from app.agent.tools import add_to_cart, check_product_availability, create_order, request_login
 from app.extensions import db
 from app.models import Cart, CartItem, Order, Product
 
@@ -212,3 +212,108 @@ def test_check_product_availability_nonexistent_product(sample_data):
 
     assert "error" in result
     assert "does not exist" in result["error"]
+
+# -------------------------------------------------------------- request_login
+
+def test_request_login_returns_flag():
+    """A pure signal, no side effects — only bound to the LLM in
+    sales_node when customer_id is None (see app/agent/nodes.py), in
+    place of add_to_cart/create_order."""
+    result = request_login.invoke({})
+
+    assert result == {"requires_login": True}
+
+
+# ------------------------------------------------- create_order / cart sync
+
+def test_create_order_removes_fully_ordered_item_from_cart(sample_data):
+    """The chat agent can call create_order directly (not just via
+    /cart/checkout), for items that happen to already be sitting in the
+    customer's cart. Ordering exactly what's in the cart line should
+    remove that line, not leave a stale duplicate behind."""
+    customer = sample_data["customer"]
+    product = sample_data["product"]  # 5 in stock
+
+    cart = Cart(user_id=customer.id)
+    db.session.add(cart)
+    db.session.flush()
+    db.session.add(CartItem(cart=cart, product=product, quantity=2))
+    db.session.commit()
+
+    result = create_order.invoke(
+        {"customer_id": customer.id, "items": [{"product_id": product.id, "quantity": 2}]}
+    )
+
+    assert "error" not in result
+    assert CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first() is None
+
+
+def test_create_order_partially_ordered_item_decrements_cart_quantity(sample_data):
+    """Ordering fewer than what's in the cart line should reduce it,
+    not remove it or leave it untouched."""
+    customer = sample_data["customer"]
+    product = sample_data["product"]  # 5 in stock
+
+    cart = Cart(user_id=customer.id)
+    db.session.add(cart)
+    db.session.flush()
+    cart_item = CartItem(cart=cart, product=product, quantity=5)
+    db.session.add(cart_item)
+    db.session.commit()
+
+    result = create_order.invoke(
+        {"customer_id": customer.id, "items": [{"product_id": product.id, "quantity": 2}]}
+    )
+
+    assert "error" not in result
+    refreshed = db.session.get(CartItem, cart_item.id)
+    assert refreshed is not None
+    assert refreshed.quantity == 3
+
+
+def test_create_order_unrelated_cart_items_untouched(sample_data):
+    """Ordering a product that ISN'T in the cart shouldn't touch
+    whatever else is sitting there."""
+    customer = sample_data["customer"]
+    product = sample_data["product"]
+    other_product = Product(
+        name="USB Keyboard", price=40.0, stock_quantity=3, category=sample_data["category"]
+    )
+    db.session.add(other_product)
+    db.session.flush()
+
+    cart = Cart(user_id=customer.id)
+    db.session.add(cart)
+    db.session.flush()
+    db.session.add(CartItem(cart=cart, product=other_product, quantity=1))
+    db.session.commit()
+
+    result = create_order.invoke(
+        {"customer_id": customer.id, "items": [{"product_id": product.id, "quantity": 1}]}
+    )
+
+    assert "error" not in result
+    assert CartItem.query.filter_by(cart_id=cart.id, product_id=other_product.id).first() is not None
+
+
+def test_create_order_failure_does_not_touch_cart(sample_data):
+    """The existing rollback-on-error path (insufficient stock) must
+    still leave the cart completely alone — cart sync only happens on
+    the success path, after the order actually commits."""
+    customer = sample_data["customer"]
+    product = sample_data["product"]  # 5 in stock
+
+    cart = Cart(user_id=customer.id)
+    db.session.add(cart)
+    db.session.flush()
+    db.session.add(CartItem(cart=cart, product=product, quantity=2))
+    db.session.commit()
+
+    result = create_order.invoke(
+        {"customer_id": customer.id, "items": [{"product_id": product.id, "quantity": 99}]}
+    )
+
+    assert "error" in result
+    cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
+    assert cart_item is not None
+    assert cart_item.quantity == 2

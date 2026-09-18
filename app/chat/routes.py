@@ -5,7 +5,7 @@ internal tool-calling messages, which are regenerated fresh each turn and
 don't need to persist across requests."""
 
 # request gives access to the incoming http request
-from flask import jsonify, render_template, request, session
+from flask import current_app, jsonify, render_template, request, session
 from langchain_core.messages import AIMessage, HumanMessage
  
 from app.agent import compiled_graph
@@ -15,16 +15,15 @@ import os
 
 # the route "/" serves the chat UI
 @chat_bp.route("/")
-@login_required(role="customer")
 def index():
     page_username = os.environ.get("MESSENGER_PAGE_USERNAME")
     messenger_link = None
-    if page_username:
+    if page_username and "user_id" in session:
         messenger_link = f"https://m.me/{page_username}?ref={session['user_id']}"
  
     return render_template(
         "chat.html",
-        user_name=session["name"],
+        user_name=session.get("name"),
         history=session.get("history", []),
         messenger_link=messenger_link,
     )
@@ -33,7 +32,6 @@ def index():
 # the route "/send" handles incoming messages from the chat UI, 
 # runs them through the agent graph, and returns the agent's response
 @chat_bp.route("/send", methods=["POST"])
-@login_required(role="customer")
 def send():
     data = request.get_json()
     message = (data.get("message") or "").strip()
@@ -43,7 +41,7 @@ def send():
         return jsonify({"error": "message is required"}), 400
  
     # customer_id comes from the logged-in session
-    customer_id = session["user_id"]
+    customer_id = session.get("user_id")  # None for guest users, or the user's id for logged-in customers
 
     history = session.get("history", [])
 
@@ -70,7 +68,11 @@ def send():
         "response": None,
     }
 
-    result = compiled_graph.invoke(state)
+    try:
+        result = compiled_graph.invoke(state)
+    except Exception:
+        current_app.logger.exception("Agent invocation failed")
+        return jsonify({"error": "The assistant is temporarily unavailable. Please try again."}), 502
 
     # Persist only the new human/ai pair. result["messages"] also contains
     # the tool-calling scaffolding (the AIMessage that requested a tool,
@@ -79,5 +81,10 @@ def send():
     history.append({"role": "ai", "content": result["response"]})
     session["history"] = history
 
+    # tool_result carries {"requires_login": True} when the guest-mode
+    # request_login tool fired, so the frontend knows to show a login
+    # prompt instead of just displaying the agent's text reply
+    requires_login = bool((result.get("tool_result") or {}).get("requires_login"))
+
     # intent is included in case i want to display it in the UI for debugging
-    return jsonify({"response": result["response"], "intent": result["intent"]})
+    return jsonify({"response": result["response"], "intent": result["intent"], "requires_login": requires_login})

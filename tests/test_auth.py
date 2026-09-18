@@ -179,8 +179,9 @@ def test_login_wrong_password(client):
 
     assert response.status_code == 200
     assert b"Invalid email or password." in response.data
-    # must not be logged in
-    assert client.get("/chat/").status_code == 302
+    # must not be logged in — /chat/ itself is open to guests now, so
+    # check a route that's still login_required instead
+    assert client.get("/cart/").status_code == 302
 
 
 def test_login_nonexistent_email(client):
@@ -261,8 +262,10 @@ def test_logout_clears_session(client):
 
     assert response.status_code == 302
     assert response.headers["Location"] == "/auth/login"
-    # session is gone, protected route bounces back to login
-    assert client.get("/chat/").status_code == 302
+    # /chat/ is open to guests now, so it's not a useful check here —
+    # /cart/ is still login_required, so it's what actually proves the
+    # session was cleared.
+    assert client.get("/cart/").status_code == 302
     with client.session_transaction() as sess:
         assert "user_id" not in sess
 
@@ -274,23 +277,27 @@ def test_logout_without_active_session_does_not_crash(client):
 
 # --------------------------------------------------------- login_required
 
-def test_chat_index_requires_login(client):
+def test_chat_index_accessible_to_guests(client):
+    """chat.index has no login_required: anyone can view and use the
+    chat. Only add_to_cart/create_order are actually gated, and that
+    gating lives in sales_node's tool binding (see test_tools.py /
+    app/agent/nodes.py), not in this route."""
     response = client.get("/chat/")
-    assert response.status_code == 302
-    assert response.headers["Location"] == "/auth/login"
+    assert response.status_code == 200
+    # guest header, not the logged-in user block
+    assert b"Browsing as guest" in response.data
+
+    # sending a message isn't exercised here since it invokes the real
+    # LLM (no mocking infrastructure exists in this suite for that) —
+    # covered instead by unit tests on the tools/nodes themselves.
 
 
-def test_chat_send_requires_login(client):
-    response = client.post("/chat/send", json={"message": "hi"})
-    assert response.status_code == 302
-    assert response.headers["Location"] == "/auth/login"
-
-
-def test_admin_role_is_locked_out_of_customer_chat(client, app):
-    """chat.index is decorated with login_required(role='customer'), and
-    there's no admin dashboard route yet. An admin who logs in is
-    redirected to /chat/ by the login view, then immediately bounced
-    back to /auth/login by the decorator on that same page."""
+def test_admin_can_also_view_chat(client, app):
+    """chat is open to everyone now, including an admin account — there's
+    no role restriction on the route itself anymore. Login itself still
+    redirects an admin to /dashboard/ (unrelated to today's changes,
+    see auth/routes.py's role check) — this test is about chat.index
+    being reachable afterward, not about where login lands."""
     with app.app_context():
         admin = User(name="Root", email="admin@example.com", role="admin")
         admin.set_password("adminpw")
@@ -301,8 +308,7 @@ def test_admin_role_is_locked_out_of_customer_chat(client, app):
         "/auth/login", data={"email": "admin@example.com", "password": "adminpw"}
     )
     assert login_response.status_code == 302
-    assert login_response.headers["Location"] == "/chat/"
+    assert login_response.headers["Location"] == "/dashboard/"
 
     chat_response = client.get("/chat/")
-    assert chat_response.status_code == 302
-    assert chat_response.headers["Location"] == "/auth/login"
+    assert chat_response.status_code == 200

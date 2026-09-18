@@ -266,6 +266,20 @@
     cursor: default;
   }
 
+  .login-prompt {
+    align-self: flex-start;
+    display: inline-flex;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 650;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    margin-top: -2px;
+  }
+  .login-prompt:hover { background: var(--line); }
+
   @media (max-width: 480px) {
     header h1 { font-size: 16.5px; }
     .user-info .user-name span:not(.avatar) { display: none; }
@@ -286,12 +300,15 @@
       </div>
       <nav class="nav">
         <a href="{{ url_for('chat.index') }}" class="active">Chat</a>
+        {% if user_name %}
         <a href="{{ url_for('cart.index') }}">Cart</a>
         <a href="{{ url_for('orders.index') }}">Orders</a>
+        {% endif %}
         {% if messenger_link %}
         <a href="{{ messenger_link }}" target="_blank">Chat on Messenger</a>
         {% endif %}
       </nav>
+      {% if user_name %}
       <div class="user-info">
         <span class="user-name">
           <span class="avatar">{{ user_name[:1]|upper }}</span>
@@ -299,6 +316,13 @@
         </span>
         <a href="{{ url_for('auth.logout') }}">Log out</a>
       </div>
+      {% else %}
+      <div class="user-info">
+        <span>Browsing as guest</span>
+        <a href="{{ url_for('auth.login') }}">Log in</a>
+        <a href="{{ url_for('auth.register') }}">Sign up</a>
+      </div>
+      {% endif %}
     </header>
 
     <div class="panel">
@@ -323,6 +347,7 @@
   </div>
 
   <script>
+    const loginUrl = "{{ url_for('auth.login') }}";
     const log = document.getElementById("log");
     const emptyState = document.getElementById("empty-state");
     const form = document.getElementById("chat-form");
@@ -419,6 +444,14 @@
           pending.innerHTML = renderMarkdown("Error: " + data.error);
         } else {
           pending.innerHTML = renderMarkdown(data.response);
+          if (data.requires_login) {
+            const link = document.createElement("a");
+            link.className = "login-prompt";
+            link.href = loginUrl;
+            link.textContent = "Log in to continue →";
+            log.appendChild(link);
+            log.scrollTop = log.scrollHeight;
+          }
         }
       } catch (err) {
         pending.classList.remove("pending");
