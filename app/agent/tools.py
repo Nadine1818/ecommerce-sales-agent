@@ -104,8 +104,12 @@ def add_to_cart(customer_id: int, product_id: int, quantity: int) -> dict:
     if cart is None:
         cart = Cart(user_id=customer_id)
         db.session.add(cart)
-        db.session.flush()  # assigns cart.id before we reference it below
- 
+        try:
+            db.session.flush()
+        except IntegrityError:
+            db.session.rollback()
+            cart = Cart.query.filter_by(user_id=customer_id).first()
+            
     existing_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product_id).first()
     if existing_item:
         existing_item.quantity += quantity

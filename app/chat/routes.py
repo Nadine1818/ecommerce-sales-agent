@@ -11,12 +11,24 @@ from langchain_core.messages import AIMessage, HumanMessage
 from app.agent import compiled_graph
 from app.auth.decorators import login_required
 from app.chat import chat_bp
+import os
 
 # the route "/" serves the chat UI
 @chat_bp.route("/")
 @login_required(role="customer")
 def index():
-    return render_template("chat.html", user_name=session["name"], history=session.get("history", []))
+    page_username = os.environ.get("MESSENGER_PAGE_USERNAME")
+    messenger_link = None
+    if page_username:
+        messenger_link = f"https://m.me/{page_username}?ref={session['user_id']}"
+ 
+    return render_template(
+        "chat.html",
+        user_name=session["name"],
+        history=session.get("history", []),
+        messenger_link=messenger_link,
+    )
+
 
 # the route "/send" handles incoming messages from the chat UI, 
 # runs them through the agent graph, and returns the agent's response
