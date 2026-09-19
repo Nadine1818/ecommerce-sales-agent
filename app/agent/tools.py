@@ -3,7 +3,8 @@
 # add_to_cart, and create_order are the real business actions """
 
 from langchain_core.tools import tool
- 
+from sqlalchemy.exc import IntegrityError
+
 from app.rag import retrieve
  
 
@@ -191,14 +192,7 @@ def create_order(customer_id: int, items: list[dict]) -> dict:
     # This matters beyond the /cart/checkout route (which already clears
     # the whole cart itself after calling this tool): the chat agent can
     # also call create_order directly from a conversation, with items
-    # that may overlap with what's sitting in the customer's cart — e.g.
-    # "add 2 mice to my cart" earlier, then "just order those" later.
-    # Without this, the order would be placed but those same 2 mice
-    # would stay in the cart, ready to be accidentally ordered again.
-    # For each ordered product, remove that quantity from the cart line
-    # if one exists — fully removing the line if the order used up
-    # everything in it, otherwise leaving the remainder (e.g. cart had
-    # 5, order was for 2 of them, 3 stay in the cart).
+    # that may overlap with what's sitting in the customer's cart 
     cart = Cart.query.filter_by(user_id=customer_id).first()
     if cart is not None:
         for item in items:

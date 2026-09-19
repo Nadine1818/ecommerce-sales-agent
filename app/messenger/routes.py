@@ -6,7 +6,7 @@ import os
 import re
  
 import requests
-from flask import request
+from flask import current_app, request
 from langchain_core.messages import AIMessage, HumanMessage
  
 from app.agent import compiled_graph
@@ -64,7 +64,7 @@ def receive():
     return "ok", 200
 
 def link_account(sender_id: str, user_id: int) -> "User | None":
-    candidate = User.query.get(user_id)
+    candidate = db.session.get(User, user_id)
     if candidate:
         candidate.messenger_psid = sender_id
         db.session.commit()
@@ -147,12 +147,21 @@ def handle_messaging_event(event: dict):
         "response": None,
     }
  
-    result = compiled_graph.invoke(state)
- 
+    try:
+        result = compiled_graph.invoke(state)
+    except Exception:
+        # Mirrors app/chat/routes.py's /send handling: a failure here is
+        # the LLM/agent being flaky or unavailable
+        current_app.logger.exception(
+            "Agent invocation failed for Messenger user %s", user.id
+        )
+        send_message(sender_id, "Sorry, I'm having trouble right now. Please try again in a moment.")
+        return
+
     history.append({"role": "human", "content": text})
     history.append({"role": "ai", "content": result["response"]})
     CONVERSATION_HISTORY[user.id] = history
- 
+
     send_message(sender_id, result["response"])
  
 # send post request the graph api url 

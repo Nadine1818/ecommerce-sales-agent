@@ -2,12 +2,19 @@
 @login_required(role="admin"), a logged-in customer can't reach any of
 these, nor an anonymous visitor"""
 
+import threading
+
 from flask import flash, redirect, render_template, request, session, url_for
 
 from app.auth.decorators import login_required
 from app.dashboard import dashboard_bp
 from app.models import Order, Product, User
 from app.rag import add_or_update_item, delete_item, get_all_items
+
+# Guards _next_id()'s read-max-then-write-one-higher sequence in rag_add.
+# Without it, two near-simultaneous "add" submissions can both read the
+# same current max and both compute the same "next" id 
+_rag_add_lock = threading.Lock()
 
 # redirects to /dashboard/products, the main dashboard page
 @dashboard_bp.route("/")
@@ -67,12 +74,13 @@ def rag_add():
             if not question or not answer:
                 flash("Question and answer are required.")
                 return render_template("rag_form.html")
-            new_id = _next_id("faq")
-            add_or_update_item(
-                item_id=f"faq-{new_id}",
-                item_type="faq",
-                data={"id": new_id, "question": question, "answer": answer},
-            )
+            with _rag_add_lock:
+                new_id = _next_id("faq")
+                add_or_update_item(
+                    item_id=f"faq-{new_id}",
+                    item_type="faq",
+                    data={"id": new_id, "question": question, "answer": answer},
+                )
 
         elif item_type == "policy":
             title = request.form.get("title", "").strip()
@@ -80,12 +88,13 @@ def rag_add():
             if not title or not content:
                 flash("Title and content are required.")
                 return render_template("rag_form.html")
-            new_id = _next_id("policy")
-            add_or_update_item(
-                item_id=f"policy-{new_id}",
-                item_type="policy",
-                data={"id": new_id, "title": title, "content": content},
-            )
+            with _rag_add_lock:
+                new_id = _next_id("policy")
+                add_or_update_item(
+                    item_id=f"policy-{new_id}",
+                    item_type="policy",
+                    data={"id": new_id, "title": title, "content": content},
+                )
 
         else:
             flash("Invalid item type.")

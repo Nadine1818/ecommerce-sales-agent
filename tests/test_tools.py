@@ -4,6 +4,9 @@ tools are thin wrappers over retrieve(), which needs the embedding
 model/vector store and is exercised by tests/manual/check_retrieve.py
 instead.)"""
 
+import pytest
+from sqlalchemy.exc import IntegrityError
+
 from app.agent.tools import add_to_cart, check_product_availability, create_order, request_login
 from app.extensions import db
 from app.models import Cart, CartItem, Order, Product
@@ -170,6 +173,52 @@ def test_add_to_cart_insufficient_stock(sample_data):
     assert "Not enough stock" in result["error"]
     # nothing should have been created for a rejected add
     assert Cart.query.count() == 0
+
+
+def test_add_to_cart_concurrent_cart_creation_race_recovers_gracefully(monkeypatch, sample_data):
+    """Regression test for a previously-broken race-recovery path:
+    add_to_cart's cart-creation block catches `except IntegrityError` to
+    handle two near-simultaneous calls both finding no existing cart and
+    both trying to create one — the loser should just re-fetch the cart
+    the winner created, rather than erroring.
+
+    (IntegrityError used to not be imported at all in tools.py, so this
+    except clause raised its own NameError the moment the race actually
+    fired, instead of recovering — fixed by importing it at the top of
+    the module. This test simulates the race directly: the mocked
+    flush() raises IntegrityError, exactly as SQLite's UNIQUE constraint
+    on Cart.user_id would if another request's cart insert had won the
+    race in between, and also performs that "other" insert itself so the
+    recovery's re-query has something real to find.)"""
+    customer = sample_data["customer"]
+    product = sample_data["product"]
+
+    real_flush = db.session.flush
+    call_count = {"n": 0}
+
+    def flush_loses_race_once(*args, **kwargs):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            # Simulate another, independent request's cart insert winning
+            # the race and actually COMMITTING (not just flushing) right
+            # before this flush would have inserted the same row — a real
+            # concurrent transaction would already be durably committed
+            # by the time our own insert hits the unique constraint.
+            db.session.rollback()
+            db.session.add(Cart(user_id=customer.id))
+            db.session.commit()
+            raise IntegrityError("UNIQUE constraint failed: carts.user_id", {}, Exception("orig"))
+        return real_flush(*args, **kwargs)
+
+    monkeypatch.setattr(db.session, "flush", flush_loses_race_once)
+
+    result = add_to_cart.invoke({"customer_id": customer.id, "product_id": product.id, "quantity": 2})
+
+    assert "error" not in result
+    assert result["quantity_in_cart"] == 2
+    # exactly one cart for this customer — the "other request's" cart was
+    # reused, not duplicated
+    assert Cart.query.filter_by(user_id=customer.id).count() == 1
 
 
 def test_add_to_cart_reuses_existing_cart_across_calls(sample_data):
