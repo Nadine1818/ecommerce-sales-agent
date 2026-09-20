@@ -1,6 +1,6 @@
 # QuickShelf — AI Sales & Customer Service Agent
 
-An AI-powered sales and customer service agent for **QuickShelf**, a small e-commerce store selling electronics and accessories. The agent understands natural-language customer messages, retrieves accurate information from a knowledge base using **RAG**, and can take a real business action — placing an order — through **LangGraph**-orchestrated tool calls. An admin dashboard built with **Flask** lets a store administrator view business data and fully manage the knowledge base without touching any code.
+An AI-powered sales and customer service agent for **QuickShelf**, a small e-commerce store selling electronics and accessories. The agent understands natural-language customer messages, retrieves accurate information from a knowledge base using **RAG**, and can take a real business action — placing an order — through **LangGraph**-orchestrated tool calls. An admin dashboard built with **Flask** lets a store administrator manage products, customer accounts, and the knowledge base, and view order history, all without touching any code.
 
 Built as a technical assessment. This README documents the business domain, the architecture, how the agent and RAG pipeline work, the database design, the available tools, how to run everything locally, and known limitations.
 
@@ -90,7 +90,7 @@ The Flask app is organized as **blueprints**, one per concern:
 | `chat`       | `/chat`         | The customer-facing chat UI and the endpoint that invokes the agent graph |
 | `cart`       | `/cart`         | Viewing/editing the persistent cart, checkout                            |
 | `orders`     | `/orders`       | A logged-in customer's own order history                                 |
-| `dashboard`  | `/dashboard`    | Admin views (products/orders/customers) and full RAG data management     |
+| `dashboard`  | `/dashboard`    | Admin CRUD for products and customers, order history (view-only), and full RAG data management |
 | `messenger`  | `/messenger`    | The Facebook Messenger webhook (bonus feature)                           |
 
 The same **compiled LangGraph agent** (`app.agent.compiled_graph`) is invoked from both `chat/routes.py` (web chat) and `messenger/routes.py` (Facebook), so there is exactly one agent implementation behind both surfaces.
@@ -175,9 +175,9 @@ Every item is embedded as a single descriptive string (e.g. a product becomes `"
 
 Because ChromaDB is a normal Python object the app talks to directly (not swapped out per-request), any add/edit/delete from the dashboard is reflected in the very next retrieval — there's no separate "republish" step.
 
-**Two ways new content gets into the RAG store:**
-1. **Products** are ingested from the live SQL `Product` table by running `python ingest_knowledge_base.py`. This script also *reconciles deletions*: it computes the current set of product ids and removes any stale product vectors left over from products that no longer exist in the database.
-2. **FAQs and policies** start from the hardcoded seed list in `app/rag/knowledge_data.py`, but from that point on are fully managed live through the **admin dashboard** (add / edit / delete), which calls `ingest.py` directly — no re-running of any script needed.
+**How new content gets into the RAG store:**
+- **Products** added, edited, or deleted through the **admin dashboard** (`/dashboard/products`) sync into RAG immediately — the same `add_or_update_item`/`delete_item` calls the RAG management pages use — so a product created there is searchable right away, no script needed. For products that enter the database another way (e.g. `seed.py`, or a bulk import outside the dashboard), running `python ingest_knowledge_base.py` picks them up: it ingests every product currently in the SQL `Product` table and also *reconciles deletions* — it computes the current set of product ids and removes any stale product vectors left over from products no longer in the database (covering products removed by anything other than the dashboard's own delete, which already cleans up its own RAG entry immediately).
+- **FAQs and policies** start from the hardcoded seed list in `app/rag/knowledge_data.py`, but from that point on are fully managed live through the **admin dashboard** (add / edit / delete), which calls `ingest.py` directly — no re-running of any script needed.
 
 ---
 
@@ -229,12 +229,12 @@ If the LLM ever requests a tool that isn't actually bound for the current turn (
 
 Built with Flask + Jinja templates, protected end-to-end by a `login_required(role="admin")` decorator — a logged-in customer cannot reach any dashboard route, nor can an anonymous visitor.
 
-The assessment only requires business data to be *displayed*; full add/edit/delete is only explicitly required for RAG data. This dashboard goes a step further and provides full CRUD for products and customer accounts too, since that's what a real store admin would actually need day to day:
+The dashboard provides full CRUD for products, customer accounts, and RAG data, with orders kept read-only:
 
 - **Products — full CRUD** (`/dashboard/products`): add, edit, and delete products. Add/edit immediately embeds the product into the RAG knowledge base too (same `add_or_update_item` call the RAG management pages use), so a newly added product is searchable by the chat agent right away, with no separate `ingest_knowledge_base.py` run needed. Deleting a product that appears in existing order history is blocked (order pages already fall back to "(deleted product)"/"Product #<id>" for a genuinely missing product, but the dashboard doesn't let that happen by default) — deleting a product only in someone's cart is allowed and clears the matching cart line, and its RAG entry is removed at the same time.
 - **Customers — full CRUD** (`/dashboard/customers`): add, edit, and delete customer accounts. This is deliberately scoped to `role="customer"` only — there is still no path, including this one, that creates or edits an *admin* account from the UI (the one admin account remains seeded directly via `seed.py`), preserving the original "no self-service path to admin" design. Deleting a customer with existing order history is blocked for the same reason as products; deleting one with no orders cascades their cart automatically (`User.cart`'s existing `cascade="all, delete-orphan"` handles this).
 - **Orders — view-only** (`/dashboard/orders`): orders remain read-only by design — an order is a historical record of what was actually purchased, and editing it after the fact isn't something a real store would want either.
-- **RAG data — full CRUD**, as explicitly required:
+- **RAG data — full CRUD**:
   - `/dashboard/rag` — lists every FAQ and policy currently in the knowledge base
   - `/dashboard/rag/add` — add a new FAQ or policy (immediately embedded and searchable)
   - `/dashboard/rag/edit/<item_id>` — edit an existing entry in place (re-embeds on save)
@@ -275,7 +275,7 @@ ecommerce-sales-agent/
 │   ├── auth/              # register / login / logout, login_required decorator
 │   ├── cart/               # cart view, update, remove, checkout
 │   ├── chat/               # chat UI + /send endpoint that invokes the agent
-│   ├── dashboard/          # admin views + RAG CRUD
+│   ├── dashboard/          # admin CRUD for products/customers + RAG, orders view-only
 │   ├── messenger/          # Facebook Messenger webhook (bonus)
 │   ├── models/              # SQLAlchemy models (Category, Product, User, Cart, CartItem, Order, OrderItem)
 │   ├── rag/                 # ChromaDB store, ingest, retrieve, seed knowledge_data.py
