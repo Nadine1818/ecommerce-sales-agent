@@ -163,7 +163,7 @@ classify_intent  ──────────────►  (conditional edg
 Every item is embedded as a single descriptive string (e.g. a product becomes `"Product: {name}. Category: {category}. Price: ${price}. Description: {description}"`), tagged in ChromaDB metadata with a `type` field (`product` / `faq` / `policy`) plus the raw source fields. That `type` tag is what lets `retrieve()` filter a search to only one or several content types.
 
 **Retrieval (`app/rag/retrieve.py`)** — `retrieve(query, top_k, item_type)` embeds the query with the same model used at ingestion time (so both live in the same vector space), then runs a similarity search against ChromaDB, optionally filtered by `type`. Two tools wrap this for the agent:
-- `retrieve_product_info` → `item_type="product"`, `top_k=3`
+- `retrieve_product_info` → `item_type="product"`, `top_k=10` (higher than the current 5-product catalog so a broad query like "what do you have?" can surface everything, not just the 3 nearest matches — at a much larger catalog this would be tuned back down, or split into a separate browse path rather than raised indefinitely)
 - `retrieve_support_info` → `item_type=["faq", "policy"]`, `top_k=3`
 
 `get_all_items()` does a plain, non-similarity fetch of everything of a given type — used by the dashboard's RAG data page to list every entry, not just ones matching a query.
@@ -229,17 +229,18 @@ If the LLM ever requests a tool that isn't actually bound for the current turn (
 
 Built with Flask + Jinja templates, protected end-to-end by a `login_required(role="admin")` decorator — a logged-in customer cannot reach any dashboard route, nor can an anonymous visitor.
 
-- **Business data — view-only**, according to the assessment requirements (full add/edit/delete is only required for RAG data, below):
-  - `/dashboard/products` — full product catalog with price/stock/category
-  - `/dashboard/orders` — every order in the system, newest first
-  - `/dashboard/customers` — registered customers (admin accounts excluded)
+The assessment only requires business data to be *displayed*; full add/edit/delete is only explicitly required for RAG data. This dashboard goes a step further and provides full CRUD for products and customer accounts too, since that's what a real store admin would actually need day to day:
+
+- **Products — full CRUD** (`/dashboard/products`): add, edit, and delete products. Add/edit immediately embeds the product into the RAG knowledge base too (same `add_or_update_item` call the RAG management pages use), so a newly added product is searchable by the chat agent right away, with no separate `ingest_knowledge_base.py` run needed. Deleting a product that appears in existing order history is blocked (order pages already fall back to "(deleted product)"/"Product #<id>" for a genuinely missing product, but the dashboard doesn't let that happen by default) — deleting a product only in someone's cart is allowed and clears the matching cart line, and its RAG entry is removed at the same time.
+- **Customers — full CRUD** (`/dashboard/customers`): add, edit, and delete customer accounts. This is deliberately scoped to `role="customer"` only — there is still no path, including this one, that creates or edits an *admin* account from the UI (the one admin account remains seeded directly via `seed.py`), preserving the original "no self-service path to admin" design. Deleting a customer with existing order history is blocked for the same reason as products; deleting one with no orders cascades their cart automatically (`User.cart`'s existing `cascade="all, delete-orphan"` handles this).
+- **Orders — view-only** (`/dashboard/orders`): orders remain read-only by design — an order is a historical record of what was actually purchased, and editing it after the fact isn't something a real store would want either.
 - **RAG data — full CRUD**, as explicitly required:
   - `/dashboard/rag` — lists every FAQ and policy currently in the knowledge base
   - `/dashboard/rag/add` — add a new FAQ or policy (immediately embedded and searchable)
   - `/dashboard/rag/edit/<item_id>` — edit an existing entry in place (re-embeds on save)
   - `/dashboard/rag/delete/<item_id>` — delete an entry (POST-only, guarded by a confirmation modal in the UI, so a page refresh or stray link click can never trigger a deletion)
 
-A `threading.Lock` guards the "compute the next numeric id, then write it" sequence in `rag_add`, so two admins adding an FAQ at the same moment can't be handed the same id.
+Every delete action across the dashboard (products, customers, and RAG entries) goes through the same POST-only route + confirmation-modal pattern, so nothing is ever deletable via a GET request or an accidental click. A `threading.Lock` guards the "compute the next numeric id, then write it" sequence in `rag_add`, so two admins adding an FAQ at the same moment can't be handed the same id.
 
 ---
 
@@ -355,7 +356,7 @@ The core web chat, RAG, orders, and dashboard all work with only `GROQ_API_KEY` 
 pytest
 ```
 
-The suite (216 test functions across `tests/test_agent.py`, `test_auth.py`, `test_cart.py`, `test_chat.py`, `test_dashboard.py`, `test_messenger.py`, `test_models.py`, `test_orders.py`, `test_rag.py`, and `test_tools.py`) runs entirely against a fresh, isolated **in-memory SQLite database** per test (never `data/app.db`), so it's always safe to run and never touches real data.
+The suite (243 test functions across `tests/test_agent.py`, `test_auth.py`, `test_cart.py`, `test_chat.py`, `test_dashboard.py`, `test_messenger.py`, `test_models.py`, `test_orders.py`, `test_rag.py`, and `test_tools.py`) runs entirely against a fresh, isolated **in-memory SQLite database** per test (never `data/app.db`), so it's always safe to run and never touches real data.
 
 - **No `GROQ_API_KEY` is required to run the tests.** Agent/LLM-dependent tests substitute a `FakeLLM` for `get_llm()`, so classification and tool-calling logic are tested deterministically without any network call or API cost.
 - RAG tests **do** use the real `BAAI/bge-small-en-v1.5` embedding model (so retrieval-quality assertions are genuine semantic search, not a mocked stand-in), but always against a throwaway, in-memory ChromaDB collection created per test — never the real persisted `data/chroma`. The first RAG test to run pays a one-time model-load cost of a few seconds.
@@ -413,7 +414,6 @@ These are real transcripts from the actual agent, running against the real seede
 
 ## 14. Limitations & Assumptions
 
-- **Product management has no dashboard UI.** Products are seeded/managed directly at the database level (`seed.py`) rather than through an admin "add/edit product" form. The assessment's dashboard requirement for business data is to *display* it, which the products/orders/customers pages do; full CRUD is only explicitly required for RAG data, which the dashboard does provide in full.
 - **FAQ/policy deletions made by hand-editing `app/rag/knowledge_data.py` are not reconciled.** `ingest_knowledge_base.py` reconciles (removes stale vectors for) deleted **products**, since products come from the live database and their current set of ids is always knowable. FAQs and policies added or edited through the dashboard bypass `knowledge_data.py` entirely and live only in ChromaDB, so there's nothing to reconcile there; but if you remove an entry directly from the seed file and re-run the ingestion script, its old vector is not automatically cleaned up (delete it from the dashboard instead).
 - **The cart's stock check is a soft check, not a reservation.** `add_to_cart` checks stock at the moment an item is added, but doesn't reserve or lock that stock — two customers could both add the last unit of a product to their carts. The *authoritative* check happens at order creation (`create_order`), which uses an atomic conditional `UPDATE` and will correctly reject whichever order runs out of stock first. This mirrors how most real storefronts behave (a full cart doesn't guarantee availability at checkout).
 - **The RAG-add id-assignment lock is in-process only.** `dashboard/routes.py` guards new FAQ/policy id assignment with a `threading.Lock`, which prevents a collision between concurrent requests handled by threads within a single Python process (true of Flask's dev server and most simple deployments). It would not prevent a collision across multiple separate worker *processes* (e.g. several Gunicorn workers with no shared lock) — not a concern for this assessment's scope, but worth calling out if deployed behind a multi-process WSGI server.

@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Customers{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/rag_data.css') }}">{% endblock %}
 {% block content %}
-<h1>Customers</h1>
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+  <h1 style="margin:0;">Customers</h1>
+  <a href="{{ url_for('dashboard.customer_add') }}" class="btn btn-accent">+ Add Customer</a>
+</div>
 
 {% if customers %}
 <div class="table-wrap">
 <table class="stack">
   <thead>
-    <tr><th style="width:64px;">ID</th><th style="width:220px;">Name</th><th>Email</th><th style="width:90px;">Orders</th></tr>
+    <tr><th style="width:64px;">ID</th><th style="width:200px;">Name</th><th>Email</th><th style="width:90px;">Orders</th><th style="width:150px;"></th></tr>
   </thead>
   <tbody>
     {% for customer in customers %}
@@ -16,6 +20,14 @@
       <td class="truncate" data-label="Name" title="{{ customer.name }}">{{ customer.name }}</td>
       <td class="truncate" data-label="Email" title="{{ customer.email }}">{{ customer.email }}</td>
       <td data-label="Orders">{{ customer.orders|length }}</td>
+      <td class="actions-cell">
+        <div class="actions">
+          <a href="{{ url_for('dashboard.customer_edit', user_id=customer.id) }}" class="btn">Edit</a>
+          <form method="POST" action="{{ url_for('dashboard.customer_delete', user_id=customer.id) }}" class="delete-form" data-item-label="{{ customer.name }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
+        </div>
+      </td>
     </tr>
     {% endfor %}
   </tbody>
@@ -24,4 +36,50 @@
 {% else %}
 <div class="empty">No customers yet.</div>
 {% endif %}
+
+<div id="confirm-overlay" class="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Delete customer</h3>
+    <p id="confirm-message">Delete this customer? This can't be undone.</p>
+    <div class="confirm-actions">
+      <button type="button" id="confirm-cancel" class="btn">Cancel</button>
+      <button type="button" id="confirm-ok" class="btn btn-danger">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const overlay = document.getElementById("confirm-overlay");
+    const message = document.getElementById("confirm-message");
+    const cancelBtn = document.getElementById("confirm-cancel");
+    const okBtn = document.getElementById("confirm-ok");
+    let pendingForm = null;
+
+    function closeModal() {
+      overlay.classList.remove("open");
+      pendingForm = null;
+    }
+
+    document.querySelectorAll(".delete-form").forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        pendingForm = form;
+        message.textContent = "Delete " + form.getAttribute("data-item-label") + "? This can't be undone.";
+        overlay.classList.add("open");
+      });
+    });
+
+    cancelBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) closeModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeModal();
+    });
+    okBtn.addEventListener("click", function () {
+      if (pendingForm) pendingForm.submit();
+    });
+  })();
+</script>
 {% endblock %}

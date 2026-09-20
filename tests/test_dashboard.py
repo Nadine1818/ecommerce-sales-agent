@@ -439,3 +439,311 @@ def test_rag_delete_requires_post_not_get(client, admin, fake_rag):
 
     assert response.status_code == 405
     assert "faq-1" in fake_rag.items
+
+
+# ------------------------------------------------------------ products: add
+
+def test_product_add_get_renders_form(client, admin, app_context, sample_data):
+    _login(client, admin)
+    response = client.get("/dashboard/products/add")
+
+    assert response.status_code == 200
+    assert b"Add Product" in response.data
+
+
+def test_product_add_creates_product_and_syncs_rag(client, admin, app_context, sample_data, fake_rag):
+    _login(client, admin)
+    response = client.post(
+        "/dashboard/products/add",
+        data={
+            "name": "Desk Lamp",
+            "description": "LED desk lamp",
+            "price": "24.99",
+            "stock_quantity": "10",
+            "category_id": str(sample_data["category"].id),
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Added Desk Lamp." in response.data
+    assert b"Desk Lamp" in response.data  # now showing in the products list
+
+    from app.models import Product
+    product = Product.query.filter_by(name="Desk Lamp").first()
+    assert product is not None
+    assert product.price == 24.99
+    assert product.stock_quantity == 10
+    # Embedded into the (fake) RAG store immediately, no separate
+    # ingestion step required.
+    assert fake_rag.items[f"product-{product.id}"]["metadata"]["name"] == "Desk Lamp"
+
+
+@pytest.mark.parametrize(
+    "overrides,expected_error",
+    [
+        ({"name": ""}, b"Name is required."),
+        ({"price": "not-a-number"}, b"Price must be a number."),
+        ({"price": "-5"}, b"Price can&#39;t be negative."),
+        ({"stock_quantity": "not-a-number"}, b"Stock quantity must be a whole number."),
+        ({"stock_quantity": "-1"}, b"Stock quantity can&#39;t be negative."),
+        ({"category_id": "99999"}, b"Please choose a valid category."),
+    ],
+)
+def test_product_add_validation_errors(client, admin, app_context, sample_data, fake_rag, overrides, expected_error):
+    data = {
+        "name": "Desk Lamp",
+        "description": "",
+        "price": "24.99",
+        "stock_quantity": "10",
+        "category_id": str(sample_data["category"].id),
+    }
+    data.update(overrides)
+
+    _login(client, admin)
+    response = client.post("/dashboard/products/add", data=data)
+
+    assert response.status_code == 200
+    assert expected_error in response.data
+    assert fake_rag.items == {}
+
+    from app.models import Product
+    assert Product.query.filter_by(name="Desk Lamp").first() is None
+
+
+def test_product_add_requires_admin(client, sample_data, fake_rag):
+    _login(client, sample_data["customer"])
+    response = client.post(
+        "/dashboard/products/add",
+        data={"name": "X", "price": "1", "stock_quantity": "1", "category_id": str(sample_data["category"].id)},
+    )
+
+    assert response.status_code == 302
+    from app.models import Product
+    assert Product.query.filter_by(name="X").first() is None
+
+
+# ----------------------------------------------------------- products: edit
+
+def test_product_edit_get_prefills_form(client, admin, app_context, sample_data):
+    _login(client, admin)
+    response = client.get(f"/dashboard/products/edit/{sample_data['product'].id}")
+
+    assert response.status_code == 200
+    assert b"Wireless Mouse" in response.data
+
+
+def test_product_edit_post_updates_in_place_and_resyncs_rag(client, admin, app_context, sample_data, fake_rag):
+    product = sample_data["product"]
+    _login(client, admin)
+    response = client.post(
+        f"/dashboard/products/edit/{product.id}",
+        data={
+            "name": "Wireless Mouse Pro",
+            "description": "Updated",
+            "price": "29.99",
+            "stock_quantity": "3",
+            "category_id": str(sample_data["category"].id),
+        },
+        follow_redirects=True,
+    )
+
+    assert b"Updated Wireless Mouse Pro." in response.data
+
+    from app.models import Product
+    refreshed = db.session.get(Product, product.id)
+    assert refreshed.name == "Wireless Mouse Pro"
+    assert refreshed.price == 29.99
+    assert fake_rag.items[f"product-{product.id}"]["metadata"]["name"] == "Wireless Mouse Pro"
+
+
+def test_product_edit_nonexistent_product_404s(client, admin, app_context):
+    _login(client, admin)
+    response = client.get("/dashboard/products/edit/99999")
+    assert response.status_code == 404
+
+
+# --------------------------------------------------------- products: delete
+
+def test_product_delete_removes_product_and_rag_entry(client, admin, app_context, sample_data, fake_rag):
+    product = sample_data["product"]
+    fake_rag.add_or_update_item(f"product-{product.id}", "product", {"id": product.id, "name": product.name})
+
+    _login(client, admin)
+    response = client.post(f"/dashboard/products/delete/{product.id}", follow_redirects=True)
+
+    assert b"Deleted Wireless Mouse." in response.data
+    from app.models import Product
+    assert db.session.get(Product, product.id) is None
+    assert f"product-{product.id}" not in fake_rag.items
+
+
+def test_product_delete_blocked_when_product_has_order_history(client, admin, app_context, sample_data, fake_rag):
+    product = sample_data["product"]
+    order = Order(customer_id=sample_data["customer"].id, status="confirmed", total_price=25.0)
+    order.items.append(OrderItem(product=product, quantity=1, price_at_order=25.0))
+    db.session.add(order)
+    db.session.commit()
+
+    _login(client, admin)
+    response = client.post(f"/dashboard/products/delete/{product.id}", follow_redirects=True)
+
+    assert b"existing order history" in response.data
+    from app.models import Product
+    assert db.session.get(Product, product.id) is not None  # untouched
+
+
+def test_product_delete_clears_matching_cart_items(client, admin, app_context, sample_data, fake_rag):
+    from app.models import Cart, CartItem
+
+    product = sample_data["product"]
+    cart = Cart(user_id=sample_data["customer"].id)
+    db.session.add(cart)
+    db.session.flush()
+    db.session.add(CartItem(cart=cart, product=product, quantity=2))
+    db.session.commit()
+
+    _login(client, admin)
+    client.post(f"/dashboard/products/delete/{product.id}")
+
+    assert CartItem.query.filter_by(product_id=product.id).first() is None
+
+
+def test_product_delete_requires_admin(client, sample_data, fake_rag):
+    _login(client, sample_data["customer"])
+    response = client.post(f"/dashboard/products/delete/{sample_data['product'].id}")
+
+    assert response.status_code == 302
+    from app.models import Product
+    assert db.session.get(Product, sample_data["product"].id) is not None
+
+
+# ----------------------------------------------------------- customers: add
+
+def test_customer_add_creates_customer(client, admin, app_context):
+    _login(client, admin)
+    response = client.post(
+        "/dashboard/customers/add",
+        data={"name": "New Person", "email": "newperson@example.com", "password": "12345678"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Added New Person." in response.data
+
+    from app.models import User
+    created = User.query.filter_by(email="newperson@example.com").first()
+    assert created is not None
+    assert created.role == "customer"
+    assert created.check_password("12345678")
+
+
+@pytest.mark.parametrize(
+    "overrides,expected_error",
+    [
+        ({"name": ""}, b"Name, email, and password are all required."),
+        ({"email": "not-an-email"}, b"Please enter a valid email address."),
+        ({"password": "short"}, b"Password must be at least 8 characters long."),
+    ],
+)
+def test_customer_add_validation_errors(client, admin, app_context, overrides, expected_error):
+    data = {"name": "New Person", "email": "newperson@example.com", "password": "12345678"}
+    data.update(overrides)
+
+    _login(client, admin)
+    response = client.post("/dashboard/customers/add", data=data)
+
+    assert response.status_code == 200
+    assert expected_error in response.data
+
+
+def test_customer_add_duplicate_email_rejected(client, admin, app_context, sample_data):
+    _login(client, admin)
+    response = client.post(
+        "/dashboard/customers/add",
+        data={"name": "Dup", "email": sample_data["customer"].email, "password": "12345678"},
+    )
+
+    assert b"An account with that email already exists." in response.data
+
+
+def test_customer_add_requires_admin(client, sample_data):
+    _login(client, sample_data["customer"])
+    response = client.post(
+        "/dashboard/customers/add",
+        data={"name": "X", "email": "x@example.com", "password": "12345678"},
+    )
+
+    assert response.status_code == 302
+    from app.models import User
+    assert User.query.filter_by(email="x@example.com").first() is None
+
+
+# ---------------------------------------------------------- customers: edit
+
+def test_customer_edit_updates_name_and_email(client, admin, app_context, sample_data):
+    customer = sample_data["customer"]
+    _login(client, admin)
+    response = client.post(
+        f"/dashboard/customers/edit/{customer.id}",
+        data={"name": "Updated Name", "email": "updated@example.com"},
+        follow_redirects=True,
+    )
+
+    assert b"Updated Updated Name." in response.data
+    refreshed = db.session.get(User, customer.id)
+    assert refreshed.name == "Updated Name"
+    assert refreshed.email == "updated@example.com"
+
+
+def test_customer_edit_cannot_target_an_admin_account(client, admin, app_context):
+    other_admin = User(name="Other Admin", email="other-admin@example.com", role="admin")
+    other_admin.set_password("adminpw")
+    db.session.add(other_admin)
+    db.session.commit()
+
+    _login(client, admin)
+    response = client.get(f"/dashboard/customers/edit/{other_admin.id}")
+
+    assert response.status_code == 404
+
+
+# -------------------------------------------------------- customers: delete
+
+def test_customer_delete_removes_customer_and_cascades_cart(client, admin, app_context, sample_data):
+    from app.models import Cart, CartItem
+
+    customer = sample_data["customer"]
+    cart = Cart(user_id=customer.id)
+    db.session.add(cart)
+    db.session.flush()
+    db.session.add(CartItem(cart=cart, product=sample_data["product"], quantity=1))
+    db.session.commit()
+
+    _login(client, admin)
+    response = client.post(f"/dashboard/customers/delete/{customer.id}", follow_redirects=True)
+
+    assert b"Deleted Test Customer." in response.data
+    assert db.session.get(User, customer.id) is None
+    assert Cart.query.filter_by(user_id=customer.id).first() is None
+
+
+def test_customer_delete_blocked_when_customer_has_orders(client, admin, app_context, sample_data):
+    customer = sample_data["customer"]
+    order = Order(customer_id=customer.id, status="confirmed", total_price=25.0)
+    db.session.add(order)
+    db.session.commit()
+
+    _login(client, admin)
+    response = client.post(f"/dashboard/customers/delete/{customer.id}", follow_redirects=True)
+
+    assert b"existing order history" in response.data
+    assert db.session.get(User, customer.id) is not None
+
+
+def test_customer_delete_requires_admin(client, sample_data):
+    _login(client, sample_data["customer"])
+    response = client.post(f"/dashboard/customers/delete/{sample_data['customer'].id}")
+
+    assert response.status_code == 302
+    assert db.session.get(User, sample_data["customer"].id) is not None

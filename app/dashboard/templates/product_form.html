@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if product else "Add" }} Product{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/rag_form.css') }}">{% endblock %}
+{% block content %}
+<h1>{{ "Edit" if product else "Add" }} Product</h1>
+
+{% set selected_category_id = (form.category_id|int if form and form.category_id else (product.category_id if product else None)) %}
+
+<form method="POST" class="form-panel">
+  <div class="field">
+    <label>Name</label>
+    <input type="text" name="name" value="{{ form.name if form else (product.name if product else '') }}">
+  </div>
+
+  <div class="field">
+    <label>Description</label>
+    <textarea name="description" rows="3">{{ form.description if form else (product.description or '' if product else '') }}</textarea>
+  </div>
+
+  <div class="field">
+    <label>Price ($)</label>
+    <input type="number" step="0.01" min="0" name="price" value="{{ form.price if form else (product.price if product else '') }}">
+  </div>
+
+  <div class="field">
+    <label>Stock Quantity</label>
+    <input type="number" step="1" min="0" name="stock_quantity" value="{{ form.stock_quantity if form else (product.stock_quantity if product else '') }}">
+  </div>
+
+  <div class="field">
+    <label>Category</label>
+    <select name="category_id">
+      {% for category in categories %}
+      <option value="{{ category.id }}" {% if category.id == selected_category_id %}selected{% endif %}>{{ category.name }}</option>
+      {% endfor %}
+    </select>
+    <span class="hint">Changes here are searchable by the chat agent immediately — no separate ingestion step needed.</span>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-accent">{{ "Save Changes" if product else "Add Product" }}</button>
+    <a href="{{ url_for('dashboard.products') }}" class="btn">Cancel</a>
+  </div>
+</form>
+{% endblock %}

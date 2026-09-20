@@ -331,12 +331,13 @@ def test_chat_index_accessible_to_guests(client):
     # covered instead by unit tests on the tools/nodes themselves.
 
 
-def test_admin_can_also_view_chat(client, app):
-    """chat is open to everyone now, including an admin account — there's
-    no role restriction on the route itself anymore. Login itself still
-    redirects an admin to /dashboard/ (unrelated to today's changes,
-    see auth/routes.py's role check) — this test is about chat.index
-    being reachable afterward, not about where login lands."""
+def test_admin_cannot_view_chat(client, app):
+    """chat.index is for guests and customers only. Login already sends
+    an admin to /dashboard/ directly (see auth/routes.py's role check);
+    this covers the separate case of an admin navigating to /chat/
+    afterward — e.g. by URL, in another tab — which chat.index now also
+    redirects to the dashboard, rather than rendering the customer
+    chat/cart/orders UI for an admin session (see app/chat/routes.py)."""
     with app.app_context():
         admin = User(name="Root", email="admin@example.com", role="admin")
         admin.set_password("adminpw")
@@ -350,4 +351,5 @@ def test_admin_can_also_view_chat(client, app):
     assert login_response.headers["Location"] == "/dashboard/"
 
     chat_response = client.get("/chat/")
-    assert chat_response.status_code == 200
+    assert chat_response.status_code == 302
+    assert chat_response.headers["Location"] == "/dashboard/"

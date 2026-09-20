@@ -17,7 +17,12 @@ def retrieve_product_info(query: str) -> str:
     you don't need a separate check for a product you just retrieved. Each
     result includes the product's id — use that exact id when calling
     add_to_cart or create_order."""
-    matches = retrieve(query, top_k=3, item_type="product")
+    # top_k=10 rather than a small fixed number: with a small catalog, a
+    # broad query like "what products do you have?" should be able to
+    # surface the whole thing, not be arbitrarily truncated. At a much
+    # larger catalog size, ranking still limits what's actually shown —
+    # this just stops the cap from kicking in before it's meaningful.
+    matches = retrieve(query, top_k=10, item_type="product")
     if not matches:
         return "No matching products found."
 

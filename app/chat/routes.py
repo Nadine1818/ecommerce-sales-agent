@@ -5,7 +5,7 @@ internal tool-calling messages, which are regenerated fresh each turn and
 don't need to persist across requests."""
 
 # request gives access to the incoming http request
-from flask import current_app, jsonify, render_template, request, session
+from flask import current_app, jsonify, redirect, render_template, request, session, url_for
 from langchain_core.messages import AIMessage, HumanMessage
  
 from app.agent import compiled_graph
@@ -16,6 +16,16 @@ import os
 # the route "/" serves the chat UI
 @chat_bp.route("/")
 def index():
+    # This UI (and cart/orders, linked from its nav) is for guests and
+    # customers only. An admin landing here — e.g. by navigating to
+    # /chat/ directly after logging in, rather than being sent here by
+    # the login flow — should see their own dashboard instead, not the
+    # shopping interface: /cart/ and /orders/ already refuse an admin
+    # via login_required(role="customer"), but this route had no
+    # equivalent check at all until now.
+    if session.get("role") == "admin":
+        return redirect(url_for("dashboard.index"))
+
     page_username = os.environ.get("MESSENGER_PAGE_USERNAME")
     messenger_link = None
     if page_username and "user_id" in session:
@@ -33,6 +43,16 @@ def index():
 # runs them through the agent graph, and returns the agent's response
 @chat_bp.route("/send", methods=["POST"])
 def send():
+    # Defense in depth alongside index()'s redirect: index() stops an
+    # admin from ever loading this page in the first place, but this
+    # guards the API endpoint itself too — e.g. a tab left open from
+    # before switching sessions — so an admin's own account can never
+    # be used as customer_id to run the sales flow (and place a real
+    # order) through the chat backend, even if the page somehow got
+    # loaded.
+    if session.get("role") == "admin":
+        return jsonify({"error": "Admins can't use the customer chat. Use the dashboard instead."}), 403
+
     data = request.get_json()
     message = (data.get("message") or "").strip()
 

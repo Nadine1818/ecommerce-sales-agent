@@ -214,3 +214,30 @@ def test_send_agent_exception_returns_502_and_does_not_save_history(client, monk
     assert "temporarily unavailable" in response.get_json()["error"]
     with client.session_transaction() as sess:
         assert "history" not in sess
+
+
+# ------------------------------------------------------- admin can't shop
+
+def test_index_redirects_admin_to_dashboard(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = 1
+        sess["name"] = "Root"
+        sess["role"] = "admin"
+
+    response = client.get("/chat/")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/dashboard/"
+
+
+def test_send_rejects_admin_session(client, monkeypatch):
+    fake = _patch_graph(monkeypatch, result=_default_result())
+    with client.session_transaction() as sess:
+        sess["user_id"] = 1
+        sess["name"] = "Root"
+        sess["role"] = "admin"
+
+    response = client.post("/chat/send", json={"message": "hi"})
+
+    assert response.status_code == 403
+    assert fake.invocations == []  # never reached the agent at all
