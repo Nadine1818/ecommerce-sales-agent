@@ -59,14 +59,14 @@ def seed():
         ]
         db.session.add_all(products)
 
-        layla = User(name="Layla Ahmed", email="layla.ahmed@example.com", role="customer")
-        layla.set_password("password123")
+        layla = User(name="Layla Ahmed", email="laylaAhmed@gmail.com", role="customer")
+        layla.set_password("12345678")
 
-        omar = User(name="Omar Khaled", email="omar.khaled@example.com", role="customer")
-        omar.set_password("password123")
+        omar = User(name="Omar Khaled", email="omarKhaled@gmail.com", role="customer")
+        omar.set_password("12345678")
 
-        admin = User(name="Store Admin", email="admin@store.com", role="admin")
-        admin.set_password("admin123")
+        admin = User(name="Store Admin", email="admin@gmail.com", role="admin")
+        admin.set_password("12345678")
 
         users = [layla, omar, admin]
         db.session.add_all(users)
