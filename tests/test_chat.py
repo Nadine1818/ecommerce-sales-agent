@@ -241,3 +241,22 @@ def test_send_rejects_admin_session(client, monkeypatch):
 
     assert response.status_code == 403
     assert fake.invocations == []  # never reached the agent at all
+
+
+# ------------------------------------------------------------- root redirect
+
+def test_root_redirects_guest_to_chat(client):
+    response = client.get("/")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/chat/"
+
+
+def test_root_redirects_admin_to_dashboard_via_chat(client):
+    with client.session_transaction() as sess:
+        sess["user_id"] = 1
+        sess["name"] = "Root"
+        sess["role"] = "admin"
+
+    response = client.get("/", follow_redirects=True)
+    assert response.status_code == 200
+    assert response.request.path == "/dashboard/products"

@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask_migrate import Migrate
 
 from app.extensions import db
@@ -55,6 +55,15 @@ def create_app(test_config=None):
     app.register_blueprint(orders_bp, url_prefix="/orders")
     app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
     app.register_blueprint(messenger_bp, url_prefix="/messenger")
+
+    # No blueprint claims the bare root path, so visiting "/" directly
+    # (the first thing anyone naturally tries) would otherwise 404.
+    # chat.index already redirects an admin session on to /dashboard,
+    # so sending everyone through /chat/ first is enough to land each
+    # role somewhere sensible without duplicating that role check here.
+    @app.route("/")
+    def root():
+        return redirect(url_for("chat.index"))
 
     @app.after_request
     def disable_caching(response):
